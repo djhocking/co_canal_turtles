@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+Big_Results/
+.DS_Store
+*.DS_Store
+Results/.DS_Store
+Code/.DS_Store
+Data/.DS_Store
+Data/Derived/
