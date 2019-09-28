@@ -100,9 +100,9 @@ ess_test <- effectiveSize(test_mcmc)
 print(ess_test)
 hist(ess_test, breaks = 50)
 
-ratio <- ess/2500 # how to find the number of samples? Each chain 2500 (samples) X 79 (params)?
+ratio <- ess/(2500*4) # how to find the number of samples? Each chain 2500 (samples) X 79 (params)?
 # Need to multiply by chains?
-test_ratio <- ess_test/1000
+test_ratio <- ess_test/(1000*4)
 
 mcmc_neff(ratio, size = 2)
 mcmc_neff(test_ratio, size = 2)
