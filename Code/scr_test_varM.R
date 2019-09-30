@@ -85,12 +85,12 @@ parameters <- c("N", "density", "alpha2", "mu_a0", "sd_a0", "mu_a1", "sd_a1", "a
 library(parallel)
 if(testing) {
   na = 100
-  ni = 100
+  ni = 101
   nt = 1
   nc = 2
-  nb =1
+  nb = 1
 } else {
-  na = 1000
+  na = 5000
   nb = 5000
   ni = 25000
   nc = min(6, detectCores())
@@ -178,7 +178,7 @@ samples <- mcmc.list(out)
 library(jagsUI)
 start_time <- Sys.time()
 
-out <- jagsUI(data = jags_data_site, inits = inits, model.file = "Code/JAGS/scr_test_varM.txt", n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE, codaOnly = parameters, parameters.to.save = parameters) # , n.adapt = na)
+out <- jagsUI(data = jags_data_site, inits = inits, model.file = "Code/JAGS/scr_test_varM.txt", n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE, codaOnly = parameters, parameters.to.save = parameters, n.adapt = na)
 end_time <- Sys.time()
 
 run_time <- end_time - start_time

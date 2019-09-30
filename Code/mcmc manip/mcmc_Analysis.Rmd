@@ -290,8 +290,8 @@ p
 ```{r mean and CIs for important parameters}
 
 ## viewing median, 0.5, and 0.9 CIs here, can change to see mean instead
-mcmc_intervals(samples, regex_pars = c("density"))
-mcmc_areas(samples, regex_pars = c("density"))
+mcmc_intervals(samples, regex_pars = c("density"), )
+mcmc_areas(samples, regex_pars = c("density"), area_method = "scaled height")
 mcmc_areas_ridges(samples, regex_pars = c("density"))
 #mcmc_intervals_data(samples, regex_pars = c("density"))
 #### REALLY COOL LOOKING GRAPHS!!!!
