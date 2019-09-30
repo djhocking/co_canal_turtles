@@ -15,7 +15,7 @@ library(utils)
 # library(reshape)
 # library(plyr)
 
-testing <- FALSE
+testing <- TRUE
 run_date <- Sys.Date()
 
 n_traps <- 14
