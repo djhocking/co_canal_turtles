@@ -46,8 +46,8 @@ p <- mcmc_trace(samples, regex_pars = c("p_cap"))
 p + facet_text(size = 15)
 
 # Detection intercept 
-p <- mcmc_trace(samples, regex_pars = c("alpha0"))
-p + facet_text(size = 15)
+# p <- mcmc_trace(samples, regex_pars = c("alpha0"))
+# p + facet_text(size = 15)
 
 p <- mcmc_trace(samples, regex_pars = c("alpha3"))
 p + facet_text(size = 15)

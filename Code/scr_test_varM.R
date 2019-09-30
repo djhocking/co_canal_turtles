@@ -5,8 +5,8 @@ library(dplyr)
 library(rjags)
 library(parallel)
 
-testing <- FALSE
-run_date <- "2019-09-24"
+testing <- TRUE
+run_date <- "2019-09-27"
 
 ######### Load Data from Previous script #########
 
@@ -88,6 +88,7 @@ if(testing) {
   ni = 100
   nt = 1
   nc = 2
+  nb =1
 } else {
   na = 1000
   nb = 5000
