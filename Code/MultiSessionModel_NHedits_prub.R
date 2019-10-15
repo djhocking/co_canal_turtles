@@ -15,14 +15,14 @@ library(utils)
 # library(reshape)
 # library(plyr)
 
-testing <- TRUE
+testing <- FALSE
 run_date <- Sys.Date()
 
 n_traps <- 14
 
 # number of possible individuals per site
 
-M <- 5000 
+M <- 1200 
 
 if(testing) {
   M <- 700
@@ -30,7 +30,8 @@ if(testing) {
 
 Sites <- read.csv(file = "Data/trapids_sites.csv", header = TRUE)
 
-max_trap_csv <- read.csv(file = "Data/Max_Traps_Site.csv")
+max_trap_csv <- read.csv(file = "Data/Max_Traps_Site.csv", stringsAsFactors = FALSE)
+site_sitenum <- max_trap_csv[ , 1:2]
 max_trap <- max_trap_csv$max_traps
 
 coords <- read.csv(file = "Data/coords.csv")
@@ -39,7 +40,7 @@ summary(coords)
 
 trap_locs_degrees <- coords
 trap_locs_degrees$trap <- 1:nrow(trap_locs_degrees)
-trap_num <- trap_locs_degrees$trap ## Change?? 122 right now
+trap_num <- trap_locs_degrees$trap
 
 
 # convert to utm to have distance in meters
@@ -87,26 +88,26 @@ for(i in 1:12){
 ####### EDF FILE ########
 
 EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
+EDF <- left_join(EDF, site_sitenum, by = "site")
+
 head(EDF)
 summary(EDF)
 
 #Take out sites H and I
 
-EDF_CPIC <- EDF %>%
-  filter(site != "H" & site != "I" & species == "CPIC")
-EDF_CPIC
+EDF_PRUB <- EDF %>%
+  filter(site != "H" & site != "I" & species == "PRUB")
+EDF_PRUB
 
 ## subtract 6 from trap ids > = 61 (Sites H and I)
 
 #Add a new column for integer session values (session = site)
 
-EDF_CPIC$trap_id_edited <- ifelse(EDF_CPIC$trap_id >= 61, EDF_CPIC$trap_id - 6, EDF_CPIC$trap_id - 0)
-EDF_CPIC$site_num <- as.integer(as.factor(EDF_CPIC$site))
+EDF_PRUB$trap_id_edited <- ifelse(EDF_PRUB$trap_id >= 61, EDF_PRUB$trap_id - 6, EDF_PRUB$trap_id - 0)
+#EDF_PRUB$site_num <- as.integer(as.factor(EDF_PRUB$site))
 
-summary(EDF_CPIC)
+summary(EDF_PRUB)
 
-
-####### WORK ON THIS SECTION NEXT 3_11_19 ########
 
 # traplocsA <- traplocsA / 100
 # matrixA <- matrixA / 100 # scale for computational purposes
@@ -121,13 +122,13 @@ n_traps <- n_traps_site$max_traps
 N_persite <- list()
 N <- list()
 for(i in 1:12) {
-  N_persite[[i]] <- nrow(EDF_CPIC[which(EDF_CPIC$recap == "N" & EDF_CPIC$site_num == i), ])
+  N_persite[[i]] <- nrow(EDF_PRUB[which(EDF_PRUB$recap == "N" & EDF_PRUB$site_num == i), ])
   N[[i]] <- N_persite[[i]]
 }
 n_ind <- N
-n_ind_total <- nrow(EDF_CPIC[which(EDF_CPIC$recap == "N"), ])
+n_ind_total <- nrow(EDF_PRUB[which(EDF_PRUB$recap == "N"), ])
 do.call(sum, N)
-K <- max(EDF_CPIC$day) # trap nights per session
+K <- max(EDF_PRUB$day) # trap nights per session
 # buffer <- 1 # check literature to make sure doesn't need to be larger
 
 ##n_ind <- length(unique(EDF_CPIC$ind)) ## Needs to match up with N? 3 off...
@@ -141,19 +142,19 @@ traps_per_site <- read.csv(file = "Data/trapids_sites.csv")
 
 ########
 
-str(EDF)
-EDF_CPIC
+# str(EDF)
+# EDF_CPIC
 
-EM_CPIC <- EDF_CPIC %>%
+EM_PRUB <- EDF_PRUB %>%
   group_by(site_num, ind, trap_id_edited, day) %>%
   select(site_num, ind, trap_id_edited, day) %>%
   mutate(count = 1) %>%
   summarise_all(sum) %>%
   #spread(trap_id_edited, count, fill = 0) %>%
   ungroup() %>%
-  mutate(id = as.integer(as.factor(ind)))
+  mutate(id = as.integer(as.factor(ind))) #max PRUB = 111
 
-EM_CPIC$site_trap <- ave(EM_CPIC$trap_id_edited, EM_CPIC$site_num, FUN = function(x) as.numeric(factor(x)))
+EM_PRUB$site_trap <- ave(EM_PRUB$trap_id_edited, EM_PRUB$site_num, FUN = function(x) as.numeric(factor(x)))
 
 
 site_trap_combos <- expand.grid(site_num = 1:12, site_trap = 1:14) %>%
@@ -161,7 +162,7 @@ site_trap_combos <- expand.grid(site_num = 1:12, site_trap = 1:14) %>%
 
 
 foo <- site_trap_combos  %>%
-   left_join(EM_CPIC)
+   left_join(EM_PRUB)
 
 foo <- foo %>%
 left_join(select(max_trap_csv, -site)) %>%
@@ -187,7 +188,7 @@ EM <- as.data.frame(EM, stringsAsFactors = FALSE)
 
 #n_traps <- 14
 J <- n_traps
-num_sites <- max(EDF_CPIC$site_num)
+num_sites <- max(EDF_PRUB$site_num)
 G <- num_sites
 
 ###########
@@ -230,7 +231,7 @@ target <- c(1:M)
     }
   }
 
-EM_array <- foob ## WHY 8's in first column??
+EM_array <- foob
 
 ## Need to divide M by 4, thus change ids?
 #### 500 per day per site? or 500 per site (500/4 per day?), also it does not keep the same id for the same indiiduals between days... so recap calc will not work?
@@ -290,7 +291,7 @@ sex_array <- array(NA, dim = c(M, G))
 
 # make 4D array: individual (M) x trap (n_traps) x day (K) x site (G)
 # split by day
-EM_CPIC_sex <- EDF_CPIC %>%
+EM_PRUB_sex <- EDF_PRUB %>%
   group_by(site_num, ind, trap_id_edited, day, sex) %>%
   select(site_num, ind, trap_id_edited, day, sex) %>%
   mutate(count = 1) %>%
@@ -308,7 +309,7 @@ target <- c(1:M)
 # split by day
 for(k in 1:K) {
   for(g in 1:G) {
-    foo <- EM_CPIC_sex[(which(EM_CPIC$site_num == g)), ]
+    foo <- EM_PRUB_sex[(which(EM_PRUB$site_num == g)), ]
     foo_less <- select(foo, -c(site_num, ind, day, trap_id_edited, count))
     foo_less <- foo_less %>%
       distinct %>%
@@ -335,14 +336,14 @@ Sex <- t(EM_array2)
 
 #### Behavior Matrix ######
 
-BM <- EDF_CPIC %>%
+BM <- EDF_PRUB %>%
   group_by(site_num, ind, day, recap) %>%
   select(site_num, ind, day, recap) %>%
   ungroup() %>%
   mutate(id = as.integer(as.factor(ind)))
 
-str(BM)
-BM
+# str(BM)
+# BM
 
 BM <- as.data.frame(BM, stringsAsFactors = FALSE)
 
@@ -398,15 +399,17 @@ C <- ifelse(foob == 2, 1, foob)
 n_sites <- G
 
 
-max_ind_sp <- max(EM_array[ , , , ], na.rm = TRUE)
+# max_ind_sp <- max(EM_array[ , , , ], na.rm = TRUE) ## ??
+max_ind_sp <- as.numeric(sum(inds$individuals))
+
 
 ########## SAVE ALL OBJECTS NEEDED FOR MODEL ##########
 
 if(!dir.exists("Data/Derived")) dir.create("Data/Derived", recursive = TRUE)
 
 if(testing) {
-  save(z, sst, n_sites, EM_array, Sex, trap_locs, K, M, xlim, max_trap, C, G, run_date, max_ind_sp, file = paste0("Data/Derived/all_site_testing_", run_date, ".RData"))
+  save(z, sst, n_sites, EM_array, Sex, trap_locs, K, M, xlim, max_trap, C, G, run_date, max_ind_sp, file = paste0("Data/Derived/all_site_testing_prub", run_date, ".RData"))
 } else {
-  save(z, sst, n_sites, EM_array, Sex, trap_locs, K, M, xlim, max_trap, C, G, run_date, max_ind_sp, file = "Data/Derived/all_site.RData") # other objects needed?
+  save(z, sst, n_sites, EM_array, Sex, trap_locs, K, M, xlim, max_trap, C, G, run_date, max_ind_sp, file = "Data/Derived/all_site_prub.RData") # other objects needed?
 }
 

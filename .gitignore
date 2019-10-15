@@ -10,3 +10,5 @@ Code/.DS_Store
 Data/.DS_Store
 Data/Derived/
 Results/JAGS/
+Results/*
+Results
