@@ -32,6 +32,9 @@ p + facet_text(size = 15)
 # p <- mcmc_trace(samples, regex_pars = c("sigma"))
 # p + facet_text(size = 15)
 
+# p <- mcmc_dens(samples, regex_pars = c("sigma"))
+# p + facet_text(size = 15) + lim(0, 10)
+
 p <- mcmc_trace(samples, regex_pars = c("beta"))
 p + facet_text(size = 15)
 
