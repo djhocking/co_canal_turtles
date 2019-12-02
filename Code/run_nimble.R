@@ -129,6 +129,43 @@ samples$summary
 plot(samples[ , "alpha2"], type = "l", xlab = "iteration",
      ylab = expression(alpha))
 
+if(run_par) {
+  
+  nc <- 3
+  ni <- 200
+  na <- 100
+  nt <- 1
+  
+  cl <- makeCluster(nc)                        # Request # cores
+  clusterExport(cl, c("scr_reg", "jags_data_site", "initsf", "parameters", "z", "sst", "Sex", "ni", "na", "nt", "K", "C", "M", "G", "n_sites")) # Make these available
+  clusterSetRNGStream(cl = cl, 54354354)
+  
+  system.time({ 
+    out <- clusterEvalQ(cl, {
+      library(nimble)
+      samples <- nimbleMCMC(
+        code = scr_reg,
+        constants = jags_data_site, ## provide the combined data & constants as constants
+        inits = initsf,
+        monitors = parameters,
+        niter = 200,
+        nburnin = 100,
+        thin = 1,
+        nchains = 1)
+      return(samples)
+    })
+  }) #
+  
+  stopCluster(cl)
+}
+
+library(bayesplot)
+post_mat <- as.matrix(out)
+
+color_scheme_set("mix-blue-pink")
+
+p <- mcmc_trace(post_mat,  regex_pars = c("N"), n_warmup = 10) #, facet_args = list(nrow = 2, labeller = label_parsed))
+p + facet_text(size = 15)
 
 
 
