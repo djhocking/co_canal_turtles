@@ -22,10 +22,10 @@ n_traps <- 14
 
 # number of possible individuals per site
 
-M <- 5000 
+M <- 7000 
 
 if(testing) {
-  M <- 700
+  M <- 100
 }
 
 Sites <- read.csv(file = "Data/trapids_sites.csv", header = TRUE)
