@@ -17,6 +17,32 @@ if(testing) {
   load(file = "Data/Derived/all_site.RData")
 }
 
+# make M variable by site to speed code
+EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
+
+#Take out sites H and I
+EDF_CPIC <- EDF %>%
+  filter(site != "H" & site != "I" & species == "CPIC")
+str(EDF_CPIC)
+
+# get number of unique individuals caught per site
+inds <- EDF_CPIC %>%
+  group_by(site) %>%
+  select(site, ind) %>%
+  distinct() %>%
+  summarise(individuals = n())
+
+# assume capture rate of min_cap_rate (~0.03) to get max individuals to augment (M[g])
+min_cap_rate <- 0.02
+df_M <- inds %>%
+  mutate(M = individuals / min_cap_rate)
+df_M
+
+# restrict M to being the maximum size of the data array so the jags loops doesn't go out of bounds
+M <- if_else(df_M$M > M, M, trunc(df_M$M))
+M <- if_else(df_M$M < max_ind_sp, max_ind_sp, M) # real captures can be up to row 750 at any site, all after are definitely augmentation
+
+
 ######### NIMBLE Model ##########
 
 scr_reg <- nimbleCode( {
@@ -97,6 +123,14 @@ samples <- nimbleMCMC(
   nburnin = 100,
   thin = 1,
   nchains = 1)
+
+samples$summary
+
+plot(samples[ , "alpha2"], type = "l", xlab = "iteration",
+     ylab = expression(alpha))
+
+
+
 
 inits1 <- initsf()
 Rmodel <- nimbleModel(code = scr_reg, name = 'scr_reg', inits = inits1) # , constants = pumpConsts, data = pumpData,
