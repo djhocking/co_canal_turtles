@@ -48,16 +48,20 @@ M <- if_else(df_M$M < max_ind_sp, max_ind_sp, M) # real captures can be up to ro
 scr_reg <- nimbleCode( {
   
   alpha2 ~ dnorm(0, 1 / 3 / 3) # Trap behavior universal distribution across sites
-  mu0 ~ dnorm(0, 1 / 2 / 2)
-  sigma0 ~ dunif(0, 10)
+  mu_0 ~ dnorm(0, 1 / 2 / 2)
+  sd_0 ~ dunif(0, 10)
+  alpha_1_sex ~ dnorm(0, 1 / 3 / 3)
   
   for(g in 1:n_sites) {
-    
-    sigma[g] <- pow(1 / (2*alpha1[g]), 0.5) # sd of half normal
-    alpha1[g] ~ dunif(0, 1000)
     psi[g] ~ dunif(0, 1) # prob of individual being in the population
     psi.sex[g] ~ dunif(0, 1) 
-    alpha0[g] ~ dnorm(mu0, sigma0) 
+    alpha0[g] ~ dnorm(mu_0, sd_0)
+    mu_1[g] ~ dnorm(0, 1 / 3 / 3)
+    
+    for(t in 1:2) {
+      sigma[g, t] <- pow(1 / (2*alpha1[g, t]), 0.5) # sd of half normal
+      log(alpha1[g, t]) <- mu_1[g] + alpha_1_sex * (t-1) # affect of being female on home range
+    }
     
     for(i in 1:M) {
       Sex[g, i] ~ dbern(psi.sex[g])
@@ -71,7 +75,7 @@ scr_reg <- nimbleCode( {
         for(k in 1:K) {
           logit(p0[g, i, j, k]) <- alpha0[g] + (alpha2 * C[i, k, g])
           y[i, j, k, g] ~ dbern(p[g, i, j, k])
-          p[g, i, j, k] <- z[g, i] * p0[g, i, j, k] * exp(- alpha1[g] * d[g, i, j] * d[g, i, j])
+          p[g, i, j, k] <- z[g, i] * p0[g, i, j, k] * exp(- alpha1[g, Sex2[g, i]] * d[g, i, j] * d[g, i, j])
         } # i
       } # j
     } # k
@@ -112,19 +116,18 @@ initsf <- function() {
        psi.sex = runif(n_sites))
 }
 
-parameters <- c("sigma", "density", "N", "alpha2", "alpha0", "alpha1") # "C", maybe C or a summary stat, might blow up if saving each activity center "s". "N", 
+parameters <- c("sigma", "density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "alpha_1_sex") #
 
 samples <- nimbleMCMC(
   code = scr_reg,
   constants = jags_data_site, ## provide the combined data & constants as constants
   inits = initsf,
   monitors = parameters,
-  niter = 200,
-  nburnin = 100,
+  niter = 100,
+  nburnin = 1,
   thin = 1,
   nchains = 1)
 
-samples$summary
 
 plot(samples[ , "alpha2"], type = "l", xlab = "iteration",
      ylab = expression(alpha))
@@ -165,6 +168,8 @@ post_mat <- as.matrix(out)
 color_scheme_set("mix-blue-pink")
 
 p <- mcmc_trace(post_mat,  regex_pars = c("N"), n_warmup = 10) #, facet_args = list(nrow = 2, labeller = label_parsed))
+p + facet_text(size = 15)
+p <- mcmc_trace(post_mat,  regex_pars = c("sigma"), n_warmup = 10) #, facet_args = list(nrow = 2, labeller = label_parsed))
 p + facet_text(size = 15)
 
 
