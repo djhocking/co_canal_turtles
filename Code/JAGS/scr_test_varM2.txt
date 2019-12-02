@@ -1,0 +1,89 @@
+model {
+
+    alpha1_sex ~ dnorm(0, 1 / 2 / 2)
+    alpha0_sex ~ dnorm(0, 1 / 2 / 2)
+    alpha0_behav ~ dnorm(0, 1 / 2 / 2)
+    mu_a0 ~ dnorm(0, 1 / 2 / 2)
+    sd_a0 ~ dunif(0, 3)
+    
+    for(g in 1:n_sites) {
+      
+      for(k in 1:K) {
+        alpha0[g, k] ~ dnorm(mu_a0, 1 / sd_a0 / sd_a0) # random site-visit detect
+      }
+      
+       psi.sex[g] ~ dunif(0, 1) # prior on prob female (male = 0, female = 1)
+       
+      for(i in 1:M[g]) {
+        Sex[g, i] ~ dbern(psi.sex[g])
+        Sex2[g, i] <- Sex[g, i] + 1
+      }
+      
+      # Home Range
+      alpha1_mu[g] ~ dnorm(0, 1 / 2 / 2) # independent site effects on home range
+      for(t in 1:2){
+        sigma[g, t] <- pow(1 / (2*alpha1[g, t]), 0.5) # sd of half normal - derived parameter
+        # alpha1[g, t] ~ dt(0, pow(1.5, -2), 1)T(0, ) # home range diff by site and sex within site - site x sex
+        log(alpha1[g, t]) <- alpha1_mu[g] + alpha1_sex * (t-1) # site + sex
+      } # t
+      
+      # prob of individual being in the population (for augmentation since N unknown)
+      psi[g] ~ dunif(0, 1) # independent aug per site
+     
+     for(i in 1:M[g]) {
+        z[g, i] ~ dbern(psi[g])
+        s[g, i] ~ dunif(xlim[g, 1], xlim[g, 2])
+        
+        for(j in 1:max_trap[g]) { 
+          d[g,i,j] <- abs(s[g, i] - trap_locs[g, j])
+          
+          for(k in 1:K) {
+              logit(p0[g, i, j, k]) <- alpha0[g, k] + alpha0_sex * Sex[g, i] + (alpha0_behav * C[i, k, g])  
+          } # k
+        } # j
+      } # i    
+      
+      for(i in 1:M[g]) {
+        for (j in 1:max_trap[g]) {
+          for (k in 1:K) {
+            y[i, j, k, g] ~ dbern(p[g, i, j, k])
+            p[g, i, j, k] <- z[g, i] * p0[g, i, j, k] * exp(- alpha1[g, Sex2[g, i]] * d[g, i, j] * d[g, i,j])
+          } # i
+        } # j
+      } # k
+      
+      # Derived parameters
+      N[g] <- sum(z[g , 1:M[g]])
+      density[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
+      sigma_site[g] <- mean(sigma[g, 1:2])    
+    } # g
+    
+    for(k in 1:K) {
+     for(g in 1:n_sites) { 
+        p_cap_site_day[g, k] <- mean(p[g, 1:M[g], 1:max_trap[g], k])
+        }
+      p_cap_day[k] <- mean(p_cap_site_day[ , k])
+      }
+      
+    # for(t in 1:2) {
+    #  for(g in 1:n_sites) { 
+    #  for(i in 1:M[g]) {
+     #   p_cap_ind_site_sex[i, g, t] <- mean(p0[g, i, 1:max_trap[g], 1:K, t])
+      #  }
+       # p_cap_site_sex[g, t] <- mean(p_cap_ind_site_sex[1:M[g], g, t])
+      #  }
+    #  p_cap_sex[t] <- mean(p_cap_site_sex[1:n_sites, t])
+     # sigma_sex[t] <- mean(sigma[ , t])
+  #  }
+    
+    sigma_mean <- mean(sigma[ , ])
+    
+    for(g in 1:n_sites) {
+      for(i in 1:M[g]) {
+        p_cap_site_ind[g, i] <- sum(p[g, i, 1:max_trap[g], 1:K])
+      }
+      p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
+    }
+    
+}
+     
