@@ -111,12 +111,6 @@ scr_reg <- nimbleCode( {
 })
 
 ######### Set data and MCMC Conditions ########
-
-############ TEMP #################
-# Fake covariate data for testing
-forest_std <- rnorm(12, 0, 2)
-depth_std <- rnorm(12, 0, 2)
-#############################
 # Real covariate data
 forest <- read.csv(file = "Data/LandUse/Forest_Cover_SingleColumn.csv", header = FALSE)
 depth <- read.csv(file = "Data/LandUse/Avg_Depth_m.csv", header = TRUE)
@@ -139,7 +133,7 @@ jags_data_site <- list(y = EM_array,
 # "initial values for the observed data have to be specified as NA"
 initsf <- function() {
   list(s = t(sst), 
-       z = z, 
+       z = Zst, 
        psi = runif(n_sites), 
        psi.sex = runif(n_sites))
 }
