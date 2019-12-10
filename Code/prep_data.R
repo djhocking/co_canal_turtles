@@ -208,7 +208,7 @@ s_st <- data.frame(expand.grid(site_num = 1:12, id_site = 1:max(M))) %>%
 # randomly assign locations within the limits of the site to augmented individuals
 s_st <- s_st %>%
   left_join(n_traps_site) %>%
-  mutate(loc = ifelse(is.na(loc), runif(1, -1.5, ((((max_traps - 1) * 25) + 150) / 100)), loc)) %>%
+  mutate(loc = ifelse(is.na(loc), runif(1, -1.5, ((((max_traps - 1) * 25) + 150) / 100)), loc))
 
 summary(s_st)
 
@@ -216,7 +216,7 @@ summary(s_st)
 s_st <- s_st %>%
   select(site_num, id_site, loc) %>%
   pivot_wider(names_from = id_site, values_from = loc) %>%
-  select(-site) %>%
+  # select(-site) %>%
   as.matrix()
 
 ##### Sex vector divided by site
