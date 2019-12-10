@@ -257,15 +257,16 @@ recaps <- EM_CPIC_expanded %>%
 recaps <- recaps %>%
   ungroup() %>%
   select(site_num, id_site, day, recap) %>%
+  mutate(recap = if_else(recap > 1, 1, recap)) %>%
   pivot_wider(names_from = day, values_from = recap, names_prefix = "day_")
 
-C <- array(0, dim = c(max(n_ind_site$n), n_days, n_sites))
+recaptured <- array(0, dim = c(max(n_ind_site$n), n_days, n_sites))
 for(l in 1:n_sites) {
   tmp <- recaps %>%
     filter(site_num == l) %>%
     select(starts_with("day")) %>%
     as.matrix()
-  C[1:nrow(tmp), 1:ncol(tmp), l] <- tmp
+  recaptured[1:nrow(tmp), 1:ncol(tmp), l] <- tmp
 }
 
 ##### Augmented Zeros #####
@@ -279,9 +280,9 @@ augs <- matrix(0, n_sites, max(M))
 if(!dir.exists("Data/Derived")) dir.create("Data/Derived", recursive = TRUE)
 
 if(testing) {
-  save(Z_st, s_st, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, file = paste0("Data/Derived/all_site_testing_", run_date, ".RData"))
+  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, file = paste0("Data/Derived/all_site_testing_", run_date, ".RData"))
 } else {
-  save(Z_st, s_st, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, file = "Data/Derived/all_site.RData") # other objects needed?
+  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, file = "Data/Derived/all_site.RData") # other objects needed?
 }
 
 rm(list = ls())
