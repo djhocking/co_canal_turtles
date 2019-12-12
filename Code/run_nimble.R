@@ -72,8 +72,8 @@ scr_zeros <- nimbleCode( {
   beta_2 ~ dnorm(0, pow(3, -2))
   
   for(g in 1:n_sites) {
-    psi[g] ~ dunif(0, 1) # prob of individual being in the population
-    psi.sex[g] ~ dunif(0, 1) 
+    psi[g] ~ dbeta(1, 1) # prob of individual being in the population
+    psi.sex[g] ~ dbeta(1, 1) 
     alpha_1_int[g] ~ dnorm(mu_1, pow(sd_1, -2))
     
     for(t in 1:2) {
@@ -85,7 +85,7 @@ scr_zeros <- nimbleCode( {
       alpha0[g, k] ~ dnorm(mu_0, sd_0)
     }
     
-    for(i in 1:M) {
+    for(i in 1:M[g]) {
       Sex[g, i] ~ dbern(psi.sex[g])
       Sex2[g, i] <- Sex[g, i] + 1
       z[g, i] ~ dbern(psi[g])
@@ -95,21 +95,36 @@ scr_zeros <- nimbleCode( {
         d[g,i,j] <- abs(s[g, i] - trap_locs[g, j])
         
         for(k in 1:K) {
-          logit(p0[g, i, j, k]) <- alpha0[g, k] + (alpha2 * C[i, k, g])
-          y[i, j, k, g] ~ dbern(p[g, i, j, k])
-          p[g, i, j, k] <- z[g, i] * p0[g, i, j, k] * exp(- alpha1[g, Sex2[g, i]] * d[g, i, j] * d[g, i, j])
+          p[g, i, j, k] <- p0[g, i, j, k] * exp(-1 * alpha1[g, Sex2[g, i]] * d[g, i, j] * d[g, i, j])
         } # i
       } # j
     } # k
+  
+  for(i in 1:n0[g]) {
+    for(j in 1:max_trap[g]) { 
+      for(k in 1:K) {
+        y[i, j, k, g] ~ dbern(p[g, i, j, k])
+        logit(p0[g, i, j, k]) <- alpha0[g, k] + (alpha2 * C[i, k, g])
+      }
+    }
+  }
     
+  for(i in (n0[g] + 1):M[g]) {
+    zeros[i, g] ~ dbern((1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])) * z[g, i])
+      for(k in 1:K) {
+    logit(p0[g, i, 1:max_trap[g], k]) <- alpha0[g, k]
+      } # i
+  } # k
+  
     # Derived parameters
-    N[g] <- sum(z[g , ])
-    density[g] <- sum(z[g , ]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
+    N[g] <- sum(z[g , 1:M[g]])
+    density[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
     
     site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g]), pow(3, -2))
   } # g
   
 })
+
 
 scr_reg <- nimbleCode( {
   
@@ -180,7 +195,7 @@ jags_data_site <- list(y = EM_array,
                        max_trap = n_traps_site$max_trap, 
                        forest = forest_std,
                        depth = depth_std,
-                       site_zeros = rep(0, 12),
+                       site_zeros = rep(0, n_sites),
                        C = recaptured, 
                        n_sites = n_sites) #, n_ind = n_ind)
 # "initial values for the observed data have to be specified as NA"
