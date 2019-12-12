@@ -216,7 +216,8 @@ summary(s_st)
 s_st <- s_st %>%
   select(site_num, id_site, loc) %>%
   pivot_wider(names_from = id_site, values_from = loc) %>%
-  # select(-site) %>%
+  ungroup() %>%
+  select(-site_num) %>%
   as.matrix()
 
 ##### Sex vector divided by site
@@ -238,6 +239,8 @@ unique(sex$sex)
 
 sex <- sex %>%
   pivot_wider(names_from = id_site, values_from = sex) %>%
+  ungroup() %>%
+  select(-site_num) %>%
   as.matrix()
 
 #### Behavior Matrix ######
