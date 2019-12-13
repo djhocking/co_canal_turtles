@@ -7,7 +7,7 @@ library(nimble)
 ######### Load Data from Previous script #########
 
 testing <- TRUE
-run_date <- "2019-12-10"
+run_date <- "2019-12-12"
 
 if(testing) {
   ni = 101
@@ -61,12 +61,12 @@ M <- if_else(df_M$M > M, M, trunc(df_M$M))
 
 scr_zeros <- nimbleCode( {
   
-  alpha2 ~ dnorm(0, 1 / 3 / 3) # Trap behavior universal distribution across sites
-  mu_0 ~ dnorm(0, 1 / 2 / 2)
-  sd_0 ~ dunif(0, 10)
-  mu_1 ~ dnorm(0, 1 / 2 / 2)
-  sd_1 ~ dunif(0, 10)
-  alpha_1_sex ~ dnorm(0, 1 / 3 / 3)
+  alpha2 ~ dnorm(0, pow(1.5, -3)) # Trap behavior universal distribution across sites
+  mu_0 ~ dnorm(0, pow(1.5, -2))
+  sd_0 ~ dunif(0, 3)
+  mu_1 ~ dnorm(0, pow(1.5, -2))
+  sd_1 ~ dunif(0, 3)
+  alpha_1_sex ~ dnorm(0, pow(1.5, -2))
   beta_0 ~ dnorm(0, pow(3, -2))
   beta_1 ~ dnorm(0, pow(3, -2))
   beta_2 ~ dnorm(0, pow(3, -2))
@@ -96,9 +96,9 @@ scr_zeros <- nimbleCode( {
         
         for(k in 1:K) {
           p[g, i, j, k] <- p0[g, i, j, k] * exp(-1 * alpha1[g, Sex2[g, i]] * d[g, i, j] * d[g, i, j])
-        } # i
+        } # k
       } # j
-    } # k
+    } # i
   
   for(i in 1:n0[g]) {
     for(j in 1:max_trap[g]) { 
@@ -113,8 +113,8 @@ scr_zeros <- nimbleCode( {
     zeros[i, g] ~ dbern((1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])) * z[g, i])
       for(k in 1:K) {
     logit(p0[g, i, 1:max_trap[g], k]) <- alpha0[g, k]
-      } # i
-  } # k
+      } # k
+  } # i
   
     # Derived parameters
     N[g] <- sum(z[g , 1:M[g]])
@@ -128,12 +128,12 @@ scr_zeros <- nimbleCode( {
 
 scr_reg <- nimbleCode( {
   
-  alpha2 ~ dnorm(0, 1 / 3 / 3) # Trap behavior universal distribution across sites
-  mu_0 ~ dnorm(0, 1 / 2 / 2)
-  sd_0 ~ dunif(0, 10)
-  mu_1 ~ dnorm(0, 1 / 2 / 2)
-  sd_1 ~ dunif(0, 10)
-  alpha_1_sex ~ dnorm(0, 1 / 3 / 3)
+  alpha2 ~ dnorm(0, pow(1.5, -3)) # Trap behavior universal distribution across sites
+  mu_0 ~ dnorm(0, pow(1.5, -2))
+  sd_0 ~ dunif(0, 3)
+  mu_1 ~ dnorm(0, pow(1.5, -2))
+  sd_1 ~ dunif(0, 3)
+  alpha_1_sex ~ dnorm(0, pow(1.5, -2))
   beta_0 ~ dnorm(0, pow(3, -2))
   beta_1 ~ dnorm(0, pow(3, -2))
   beta_2 ~ dnorm(0, pow(3, -2))
@@ -162,9 +162,9 @@ scr_reg <- nimbleCode( {
         d[g,i,j] <- abs(s[g, i] - trap_locs[g, j])
         
         for(k in 1:K) {
-          logit(p0[g, i, j, k]) <- alpha0[g, k] + (alpha2 * C[i, k, g])
+          logit(p0[g, i, j, k]) <- alpha0[g, k] + alpha2 * C[i, k, g]
           y[i, j, k, g] ~ dbern(p[g, i, j, k])
-          p[g, i, j, k] <- z[g, i] * p0[g, i, j, k] * exp(- alpha1[g, Sex2[g, i]] * d[g, i, j] * d[g, i, j])
+          p[g, i, j, k] <- z[g, i] * p0[g, i, j, k] * exp(-1 * alpha1[g, Sex2[g, i]] * d[g, i, j] * d[g, i, j])
         } # i
       } # j
     } # k
@@ -197,12 +197,14 @@ jags_data_site <- list(y = EM_array,
                        depth = depth_std,
                        site_zeros = rep(0, n_sites),
                        C = recaptured, 
-                       n_sites = n_sites) #, n_ind = n_ind)
+                       zeros = matrix(0, max(M), n_sites),
+                       n_sites = n_sites,
+                       n0 = n_ind_site$n) #, n_ind = n_ind)
 # "initial values for the observed data have to be specified as NA"
 initsf <- function() {
   list(s = s_st, 
        z = Z_st, 
-       psi = runif(n_sites, psi_st*0.5, psi_st*2), 
+       psi = runif(n_sites, psi_st * 0.5, psi_st*2), 
        psi.sex = runif(n_sites, 0.3, 0.8))
 }
 
@@ -213,7 +215,17 @@ samples <- nimbleMCMC(
   constants = jags_data_site, ## provide the combined data & constants as constants
   inits = initsf,
   monitors = parameters,
-  niter = 20,
+  niter = 200,
+  nburnin = 100,
+  thin = 1,
+  nchains = 1)
+
+samples <- nimbleMCMC(
+  code = scr_zeros,
+  constants = jags_data_site, ## provide the combined data & constants as constants
+  inits = initsf,
+  monitors = parameters,
+  niter = 100,
   nburnin = 1,
   thin = 1,
   nchains = 1)
@@ -225,12 +237,15 @@ plot(samples[ , "alpha2"], type = "l", xlab = "iteration",
 plot(samples[ , "density[1]"], type = "l", xlab = "iteration",
      ylab = expression(alpha))
 
+plot(samples[ , "density[3]"], type = "l", xlab = "iteration",
+     ylab = expression(alpha))
+
 plot(samples[ , "beta_1"], type = "l", xlab = "iteration",
      ylab = expression(alpha))
 plot(samples[ , "beta_2"], type = "l", xlab = "iteration",
      ylab = expression(alpha))
 
-plot(samples[ , "density[1]"], type = "l", xlab = "iteration",
+plot(samples[ , "sigma[1, 1]"], type = "l", xlab = "iteration",
      ylab = expression(alpha))
 
 if(run_par) {
