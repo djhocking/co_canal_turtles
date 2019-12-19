@@ -46,7 +46,7 @@ inds <- EDF_CPIC %>%
   summarise(individuals = n())
 
 # assume capture rate of min_cap_rate (~0.03) to get max individuals to augment (M[g])
-min_cap_rate <- 0.02
+min_cap_rate <- 0.015
 df_M <- inds %>%
   mutate(M = individuals / min_cap_rate)
 df_M
@@ -63,9 +63,9 @@ scr_zeros <- nimbleCode( {
   mu_0 ~ dnorm(0, pow(1.5, -2))
   sd_0 ~ dunif(0, 3)
   # alpha_1_sex ~ dnorm(0, pow(1.5, -2))
-  beta_0 ~ dnorm(0, pow(3, -2))
-  beta_1 ~ dnorm(0, pow(3, -2))
-  beta_2 ~ dnorm(0, pow(3, -2))
+  beta_0 ~ dnorm(0, pow(10, -2))
+  beta_1 ~ dnorm(0, pow(10, -2))
+  beta_2 ~ dnorm(0, pow(10, -2))
   # alpha_1_int ~ dnorm(0, pow(3, -2))
   
   for(g in 1:n_sites) {
