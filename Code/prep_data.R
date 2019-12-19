@@ -77,9 +77,10 @@ for(i in 1:12){
 
 # only a small number of CPIC were not sexed (~1%). They technically could be used but it would be really difficult with NIMBLE and the two other zero tricks and site looks that are already being applied. For this analysis, we will exclude those individuals from the data. Same with NA of which there are only two (SODO).
 
-filter(EDF, is.na(sex))
-filter(EDF, sex == "U")
+# filter(EDF, is.na(sex))
+# filter(EDF, sex == "U")
 
+# only do analysis for Males and Females. Skip for unrecorded and juvenile because insufficient data for calculating separate home range sizes and such for juveniles.
 EDF <- EDF %>%
   filter(sex != "U",
          !is.na(sex))
