@@ -89,7 +89,7 @@ scr_zeros <- nimbleCode( {
       Sex[g, i] ~ dbern(psi.sex[g])
       Sex2[g, i] <- Sex[g, i] + 1
       z[g, i] ~ dbern(psi[g])
-      s[g, i] ~ dunif(xlim[g, 1], xlim[g, 2]) ##??
+      s[g, i] ~ dunif(xlim[g, 1], xlim[g, 2])
       
       for(j in 1:max_trap[g]) { 
         d[g,i,j] <- abs(s[g, i] - trap_locs[g, j])
@@ -110,10 +110,12 @@ scr_zeros <- nimbleCode( {
   }
     
   for(i in (n0[g] + 1):M[g]) {
-    zeros[i, g] ~ dbern((1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])) * z[g, i])
-      for(k in 1:K) {
-    logit(p0[g, i, 1:max_trap[g], k]) <- alpha0[g, k]
+    for(k in 1:K) {
+      for(j in 1:max_trap[g]) {
+        logit(p0[g, i, j, k]) <- alpha0[g, k]
+        } # j
       } # k
+    zeros[i, g] ~ dbern(1 - prod(p[i, g, 1:max_trap[g], 1:K] * z[g, i]))
   } # i
   
     # Derived parameters
