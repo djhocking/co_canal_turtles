@@ -12,6 +12,7 @@ Data/Derived/
 Results/JAGS/
 Results/*
 Results
+*.pdf
 *.jpg
 *.jpeg
 *.tiff
