@@ -70,7 +70,7 @@ for (i in 1:12) {
 
 xlim <- matrix(NA, 12, 2)
 for(i in 1:12){
-  xlim[i, 1:2] <- c(min(trap_dist_list[[i]]) - 150, max(trap_dist_list[[i]]) + 150) / 100 # need to have buffer on each side without being negative. Just added 50 to the end for testing but will have to think through
+  xlim[i, 1:2] <- c(min(trap_dist_list[[i]]) - 250, max(trap_dist_list[[i]]) + 250) / 100 # need to have buffer on each side without being negative. 
 }
 
 ####### EDF FILE ########
