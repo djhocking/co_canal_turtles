@@ -7,7 +7,7 @@ library(nimble)
 ######### Load Data from Previous script #########
 
 testing <- TRUE
-run_date <- "2019-12-12"
+run_date <- "2019-12-19"
 
 if(testing) {
   ni = 101
@@ -90,7 +90,7 @@ scr_zeros <- nimbleCode( {
       Sex2[g, i] <- Sex[g, i] + 1
       z[g, i] ~ dbern(psi[g])
       s[g, i] ~ dunif(xlim[g, 1], xlim[g, 2])
-      
+
       for(j in 1:max_trap[g]) { 
         d[g,i,j] <- abs(s[g, i] - trap_locs[g, j])
         
@@ -154,7 +154,7 @@ scr_reg <- nimbleCode( {
       alpha0[g, k] ~ dnorm(mu_0, sd_0)
     }
     
-    for(i in 1:M) {
+    for(i in 1:M[g]) {
       Sex[g, i] ~ dbern(psi.sex[g])
       Sex2[g, i] <- Sex[g, i] + 1
       z[g, i] ~ dbern(psi[g])
@@ -212,6 +212,45 @@ initsf <- function() {
 
 parameters <- c("sigma", "density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "alpha_1_sex", "beta_0", "beta_1", "beta_2") #
 
+#-------- test regular model ------------
+
+# need to expand recaptures to include zeros for augmented individuals
+recaptured2 <- base::array(0, dim = c(max(M), n_days, n_sites))
+for(i in 1:dim(recaptured)[1]) {
+  for(j in 1:dim(recaptured)[2]) {
+    for(k in 1:dim(recaptured)[3]) {
+  recaptured2[i,j,k] <- recaptured[i,j,k]
+    }
+  }
+}
+
+# need to expand observations to include zeros for augmented individuals
+y2 <- base::array(NA, dim = c(max(M), max(n_traps_site$max_traps), n_days, n_sites))
+for(i in 1:dim(EM_array)[1]) {
+  for(j in 1:dim(EM_array)[2]) {
+    for(k in 1:dim(EM_array)[3]) {
+      for(g in 1:dim(EM_array)[4]) {
+       y2[i,j,k,g] <- EM_array[i,j,k,g]
+      }
+    }
+  }
+}
+
+jags_data_site <- list(y = y2, 
+                       Sex = sex, 
+                       trap_locs = trap_locs, 
+                       K=n_days, 
+                       M=M, 
+                       xlim=xlim, 
+                       max_trap = n_traps_site$max_trap, 
+                       forest = forest_std,
+                       depth = depth_std,
+                       site_zeros = rep(0, n_sites),
+                       C = recaptured2, 
+                       zeros = matrix(0, max(M), n_sites),
+                       n_sites = n_sites,
+                       n0 = n_ind_site$n)
+start_reg <- Sys.time()
 samples <- nimbleMCMC(
   code = scr_reg,
   constants = jags_data_site, ## provide the combined data & constants as constants
@@ -221,16 +260,40 @@ samples <- nimbleMCMC(
   nburnin = 100,
   thin = 1,
   nchains = 1)
+end_reg <- Sys.time()
 
+#--------- test model with zeros trick ------------
+jags_data_site <- list(y = EM_array, 
+                       Sex = sex, 
+                       trap_locs = trap_locs, 
+                       K=n_days, 
+                       M=M, 
+                       xlim=xlim, 
+                       max_trap = n_traps_site$max_trap, 
+                       forest = forest_std,
+                       depth = depth_std,
+                       site_zeros = rep(0, n_sites),
+                       C = recaptured, 
+                       zeros = matrix(0, max(M), n_sites),
+                       n_sites = n_sites,
+                       n0 = n_ind_site$n)
+start_zeros <- Sys.time()
 samples <- nimbleMCMC(
   code = scr_zeros,
   constants = jags_data_site, ## provide the combined data & constants as constants
   inits = initsf,
   monitors = parameters,
-  niter = 100,
-  nburnin = 1,
+  niter = 200,
+  nburnin = 100,
   thin = 1,
   nchains = 1)
+end_zeros <- Sys.time()
+
+(time_reg <- end_reg - start_reg)
+(time_zeros <- end_zeros - start_zeros)
+
+as.numeric(time_reg - time_zeros) / as.numeric(time_reg)
+
 
 
 plot(samples[ , "alpha2"], type = "l", xlab = "iteration",
