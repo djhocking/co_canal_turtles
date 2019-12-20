@@ -69,10 +69,10 @@ scr_zeros <- nimbleCode( {
   beta_1 ~ dnorm(0, pow(10, -2))
   beta_2 ~ dnorm(0, pow(10, -2))
   # alpha_1_int ~ dnorm(0, pow(3, -2))
+  psi_sex ~ dbeta(1, 1)
   
   for(g in 1:n_sites) {
     psi[g] ~ dbeta(1, 1) # prob of individual being in the population
-    psi.sex[g] ~ dbeta(1, 1) 
     
     for(t in 1:2) {
       sigma[t] <- pow(1 / (2 * alpha1[t]), 0.5) # sd of half normal
@@ -85,7 +85,7 @@ scr_zeros <- nimbleCode( {
     }
     
     for(i in 1:M[g]) {
-      Sex[g, i] ~ dbern(psi.sex[g])
+      Sex[g, i] ~ dbern(psi_sex)
       Sex2[g, i] <- Sex[g, i] + 1
       z[g, i] ~ dbern(psi[g])
       s[g, i] ~ dunif(xlim[g, 1], xlim[g, 2])
@@ -155,7 +155,19 @@ initsf <- function() {
        psi.sex = runif(n_sites, 0.3, 0.8))
 }
 
-parameters <- c("sigma", "density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "alpha_1_sex", "beta_0", "beta_1", "beta_2") #
+parameters <- c("sigma", "density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "beta_0", "beta_1", "beta_2", "psi_sex") # "mu_1", "sd_1", "alpha_1_sex",
+
+
+samples <- nimbleMCMC(
+  code = scr_zeros,
+  constants = jags_data_site, ## provide the combined data & constants as constants
+  inits = initsf,
+  monitors = parameters,
+  niter = ni,
+  nburnin = nb,
+  thin = nt,
+  nchains = nc)
+
 
   start_zeros <- Sys.time()
   cl <- makeCluster(nc)                        # Request # cores
