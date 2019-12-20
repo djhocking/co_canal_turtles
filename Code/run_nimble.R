@@ -152,7 +152,7 @@ initsf <- function() {
   list(s = s_st, 
        z = Z_st, 
        psi = runif(n_sites, psi_st * 0.5, psi_st*2), 
-       psi.sex = runif(n_sites, 0.3, 0.8))
+       psi_sex = runif(n_sites, 0.3, 0.8))
 }
 
 parameters <- c("sigma", "density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "beta_0", "beta_1", "beta_2", "psi_sex") # "mu_1", "sd_1", "alpha_1_sex",
