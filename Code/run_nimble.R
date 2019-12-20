@@ -3,6 +3,7 @@
 
 library(dplyr)
 library(nimble)
+library(parallel)
 
 ######### Load Data from Previous script #########
 
@@ -14,6 +15,7 @@ if(testing) {
   nt = 1
   nc = 2
   nb = 1
+  na = 100
 } else {
   na = 5000
   nb = 5000
