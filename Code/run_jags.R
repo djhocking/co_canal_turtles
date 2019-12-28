@@ -69,6 +69,7 @@ model{
   beta_0 ~ dnorm(0, pow(10, -2))
   beta_1 ~ dnorm(0, pow(10, -2))
   beta_2 ~ dnorm(0, pow(10, -2))
+  beta_3 ~ dnorm(0, pow(10, -2))
   # alpha_1_int ~ dnorm(0, pow(3, -2))
   psi_sex ~ dbeta(1, 1)
   
@@ -158,7 +159,7 @@ sigma_mean <- mean(sigma[ ])
       p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
     }
 
-    site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g]), pow(3, -2))
+    site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
   } # g
   
 }
@@ -167,9 +168,11 @@ sigma_mean <- mean(sigma[ ])
 ######### Set data and MCMC Conditions ########
 forest <- read.csv(file = "Data/LandUse/Forest_Cover_SingleColumn.csv", header = FALSE)
 depth <- read.csv(file = "Data/LandUse/Avg_Depth_m.csv", header = TRUE)
+width <- read.csv(file = "Data/LandUse/Width_m.csv", header = TRUE)
 
 forest_std <- as.numeric(scale(forest))
 depth_std <- as.numeric(scale(depth))
+width_std <- as.numeric(scale(width))
 
 jags_data_site <- list(y = EM_array, 
                        Sex = sex, 
@@ -180,6 +183,7 @@ jags_data_site <- list(y = EM_array,
                        max_trap = n_traps_site$max_trap, 
                        forest = forest_std,
                        depth = depth_std,
+                       width = width_std,
                        site_zeros = rep(0, n_sites),
                        C = recaptured, 
                        zeros = matrix(0, max(M), n_sites),
@@ -193,7 +197,7 @@ initsf <- function() {
        psi_sex = runif(1, 0.3, 0.8))
 }
 
-parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "alpha_1_sex", "beta_0", "beta_1", "beta_2", "sigma_mean", "psi_sex", "p_cap_day", "p_cap_sex", "mu_psi", "sd_psi", "sigma_mean", "sigma_sex", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
+parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "alpha_1_sex", "beta_0", "beta_1", "beta_2", "beta_3", "sigma_mean", "psi_sex", "p_cap_day", "p_cap_sex", "mu_psi", "sd_psi", "sigma_mean", "sigma_sex", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 start_zeros <- Sys.time()
 cl <- makeCluster(nc)                        # Request # cores
