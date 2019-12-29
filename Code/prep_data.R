@@ -27,7 +27,6 @@ n_traps <- n_traps_site$max_traps
 # K <- max(EDF$day)
 n_days <- max(EDF$day)
 
-
 ########## Process Trap Locations ###########
 trap_locs_degrees <- coords
 trap_locs_degrees$trap <- 1:nrow(trap_locs_degrees)
@@ -277,6 +276,10 @@ for(l in 1:n_sites) {
 
 augs <- matrix(0, n_sites, max(M))
 
+#### Create matrix changing site IDs to be spatially relevant ####
+# Matrix with current site IDs (which are sequential temporally) and spatially sequential site IDs
+
+site_num_spatial <- as.matrix(c(2,4,6,7,1,9,8,3,5,10,11,12))
 
 
 ########## SAVE ALL OBJECTS NEEDED FOR MODEL ##########
