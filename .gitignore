@@ -12,3 +12,11 @@ Data/Derived/
 Results/JAGS/
 Results/*
 Results
+
+Rplots.pdf
+
+*.pdf
+*.jpg
+*.jpeg
+*.tiff
+*.tif

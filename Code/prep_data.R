@@ -27,7 +27,6 @@ n_traps <- n_traps_site$max_traps
 # K <- max(EDF$day)
 n_days <- max(EDF$day)
 
-
 ########## Process Trap Locations ###########
 trap_locs_degrees <- coords
 trap_locs_degrees$trap <- 1:nrow(trap_locs_degrees)
@@ -70,16 +69,17 @@ for (i in 1:12) {
 
 xlim <- matrix(NA, 12, 2)
 for(i in 1:12){
-  xlim[i, 1:2] <- c(min(trap_dist_list[[i]]) - 150, max(trap_dist_list[[i]]) + 150) / 100 # need to have buffer on each side without being negative. Just added 50 to the end for testing but will have to think through
+  xlim[i, 1:2] <- c(min(trap_dist_list[[i]]) - 250, max(trap_dist_list[[i]]) + 250) / 100 # need to have buffer on each side without being negative. 
 }
 
 ####### EDF FILE ########
 
 # only a small number of CPIC were not sexed (~1%). They technically could be used but it would be really difficult with NIMBLE and the two other zero tricks and site looks that are already being applied. For this analysis, we will exclude those individuals from the data. Same with NA of which there are only two (SODO).
 
-filter(EDF, is.na(sex))
-filter(EDF, sex == "U")
+# filter(EDF, is.na(sex))
+# filter(EDF, sex == "U")
 
+# only do analysis for Males and Females. Skip for unrecorded and juvenile because insufficient data for calculating separate home range sizes and such for juveniles.
 EDF <- EDF %>%
   filter(sex != "U",
          !is.na(sex))
@@ -216,7 +216,8 @@ summary(s_st)
 s_st <- s_st %>%
   select(site_num, id_site, loc) %>%
   pivot_wider(names_from = id_site, values_from = loc) %>%
-  # select(-site) %>%
+  ungroup() %>%
+  select(-site_num) %>%
   as.matrix()
 
 ##### Sex vector divided by site
@@ -238,6 +239,8 @@ unique(sex$sex)
 
 sex <- sex %>%
   pivot_wider(names_from = id_site, values_from = sex) %>%
+  ungroup() %>%
+  select(-site_num) %>%
   as.matrix()
 
 #### Behavior Matrix ######
@@ -273,6 +276,10 @@ for(l in 1:n_sites) {
 
 augs <- matrix(0, n_sites, max(M))
 
+#### Create matrix changing site IDs to be spatially relevant ####
+# Matrix with current site IDs (which are sequential temporally) and spatially sequential site IDs
+
+site_num_spatial <- as.matrix(c(2,4,6,7,1,9,8,3,5,10,11,12))
 
 
 ########## SAVE ALL OBJECTS NEEDED FOR MODEL ##########
