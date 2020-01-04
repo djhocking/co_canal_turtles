@@ -15,8 +15,11 @@ run_date <- Sys.Date()
 # number of possible individuals per site
 M <- 7000 
 if(testing) {
-  M <- 200
+  M <- 700
 }
+
+site_num_spatial <- as.matrix(cbind(c(2,4,6,7,1,9,8,3,5,10,11,12), 
+c("A","C","D","E","F","G","J","K","L","M","N","O")))
 
 Sites <- read.csv(file = "Data/trapids_sites.csv", header = TRUE, stringsAsFactors = FALSE)
 coords <- read.csv(file = "Data/coords.csv", stringsAsFactors = FALSE)
@@ -278,8 +281,6 @@ augs <- matrix(0, n_sites, max(M))
 
 #### Create matrix changing site IDs to be spatially relevant ####
 # Matrix with current site IDs (which are sequential temporally) and spatially sequential site IDs
-
-site_num_spatial <- as.matrix(c(2,4,6,7,1,9,8,3,5,10,11,12))
 
 
 ########## SAVE ALL OBJECTS NEEDED FOR MODEL ##########
