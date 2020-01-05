@@ -71,7 +71,7 @@ model{
   beta_2 ~ dnorm(0, pow(10, -2))
   beta_3 ~ dnorm(0, pow(10, -2))
   # alpha_1_int ~ dnorm(0, pow(3, -2))
-  psi_sex ~ dbeta(1, 1)
+  psi_sex[t] ~ dbeta(1, 1)
   
   for(g in 1:n_sites) {
     psi[g] ~ dbeta(1, 1) # prob of individual being in the population
@@ -86,9 +86,9 @@ model{
       alpha0[g, k] ~ dnorm(mu_0, sd_0)
     }
                  
-     for(i in 1:M[g]) {
-     Sex[i] ~ dbern(psi_sex)
-     Sex2[i] <- Sex[i] + 1
+     for(i in 1:M[g]) {  ## here
+     Sex[t,i] ~ dbern(psi_sex)
+     Sex2[t,i] <- Sex[t, i] + 1
      z[g, i] ~ dbern(psi[g])
      s[g, i] ~ dunif(xlim[g, 1], xlim[g, 2])
       
@@ -124,9 +124,10 @@ model{
         for(j in 1:max_trap[g]) {
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
-      } # k
-      zeros[i, g] ~ dbern(1 - prod(p[i, g, 1:max_trap[g], 1:K] * z[g, i]))
+    #  } # k
+      zeros[i, g] ~ dbern(1 - prod(p[g, 1:M[g], 1:max_trap[g], k] * z[g, i]))
     } # i
+}
     
     # Derived parameters
     N[g] <- sum(z[g , 1:M[g]])
@@ -142,22 +143,22 @@ model{
 for(t in 1:2) {
       for(g in 1:n_sites) {
         for(i in 1:M[g]) {
-          p_cap_ind_site_sex[i, g, t] <- mean(p0[g, i, 1:max_trap[g], 1:K, t])
+          p_cap_ind_site[i, g] <- mean(p0[g, i, 1:max_trap[g], 1:K])
         }
-        p_cap_site_sex[g, t] <- mean(p_cap_ind_site_sex[1:M[g], g, t])
+        p_cap_site[g] <- mean(p_cap_ind_site[1:M[g], g])
       }
-      p_cap_sex[t] <- mean(p_cap_site_sex[1:n_sites, t])
+      p_cap_sex[t] <- mean(p_cap_sex[t])
       sigma_sex[t] <- mean(sigma[t])
 }
 
 sigma_mean <- mean(sigma[ ])
     
-    for(g in 1:n_sites) {
-      for(i in 1:M[g]) {
-        p_cap_site_ind[g, i] <- sum(p[g, i, 1:max_trap[g], 1:K])
-      }
-      p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
-    }
+    # for(g in 1:n_sites) {
+    #   for(i in 1:M[g]) {
+    # #     p_cap_site_ind[g, i] <- sum(p[g, i, 1:max_trap[g], 1:K])
+    # #   }
+    # #   p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
+    # # }
 
     site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
   } # g
@@ -200,8 +201,8 @@ initsf <- function() {
 parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "alpha_1_sex", "beta_0", "beta_1", "beta_2", "beta_3", "sigma_mean", "psi_sex", "p_cap_day", "p_cap_sex", "mu_psi", "sd_psi", "sigma_mean", "sigma_sex", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 start_zeros <- Sys.time()
-cl <- makeCluster(nc)                        # Request # cores
-clusterExport(cl, c("scr_zeros", "jags_data_site", "initsf", "parameters", "EM_array", "sex", "trap_locs", "n_days", "M", "xlim", "n_traps_site", "forest_std", "depth_std", "n_sites", "recaptured", "n_ind_site", "Z_st", "s_st", "psi_st", "ni", "nb", "na", "nt", "nc")) # Make these available
+cl <- makeCluster(nc)                       # Request # cores
+clusterExport(cl, c("scr_zeros", "jags_data_site", "initsf", "parameters", "EM_array", "sex", "trap_locs", "n_days", "M", "xlim", "n_traps_site", "forest_std", "depth_std", "n_sites", "recaptured", "n_ind_site", "Z_st", "s_st", "psi_st", "ni", "nb", "nt", "nc")) # Make these available
 
 clusterSetRNGStream(cl = cl, 54354354)
 
@@ -209,11 +210,14 @@ clusterSetRNGStream(cl = cl, 54354354)
 out <- jagsUI(data = jags_data_site, 
               inits = initsf, 
               model.file = "Code/JAGS/zero_test.txt", 
-              n.chains = 1,
-              n.adapt = 100,
+              n.chains = 2,
               n.iter = 101, 
-              n.burnin = 1, 
+              n.burnin = 100, 
               n.thin = 1, 
               parallel = TRUE, 
               codaOnly = parameters, 
               parameters.to.save = parameters)
+
+end_zeros <- Sys.time()
+
+stopCluster(cl)
