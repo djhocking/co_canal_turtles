@@ -22,10 +22,12 @@ site_num_spatial <- as.matrix(cbind(c(2,4,6,7,1,9,8,3,5,10,11,12),
 c("A","C","D","E","F","G","J","K","L","M","N","O")))
 
 Sites <- read.csv(file = "Data/trapids_sites.csv", header = TRUE, stringsAsFactors = FALSE)
+Sites$site_num <- as.integer(site_num_spatial[ ,1])
 coords <- read.csv(file = "Data/coords.csv", stringsAsFactors = FALSE)
 EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
 n_traps_site <- read.csv(file = "Data/Max_Traps_Site.csv", stringsAsFactors = FALSE) # number of traps per site
-
+n_traps_site$site_num <- as.integer(site_num_spatial[ ,1])
+n_traps_site <- n_traps_site[order(n_traps_site$site_num), ]
 n_traps <- n_traps_site$max_traps
 # K <- max(EDF$day)
 n_days <- max(EDF$day)
@@ -33,7 +35,7 @@ n_days <- max(EDF$day)
 ########## Process Trap Locations ###########
 trap_locs_degrees <- coords
 trap_locs_degrees$trap <- 1:nrow(trap_locs_degrees)
-trap_num <- trap_locs_degrees$trap ## Change?? 122 right now
+trap_num <- trap_locs_degrees$trap
 
 
 # convert to utm to have distance in meters
@@ -47,23 +49,23 @@ colnames(trap_locs) = c("trap_id", "easting", "northing")
 # trap_locs as single vector with distance between
 
 ## Creating trap location vector per site using coordinates (sp package required)
-trap_dist_A <- spDistsN1(coords_utm[1:8, ], coords_utm[1, ])
-trap_dist_C <- spDistsN1(coords_utm[9:18, ], coords_utm[9, ])
-trap_dist_D <- spDistsN1(coords_utm[19:26, ], coords_utm[19, ])
-trap_dist_E <- spDistsN1(coords_utm[27:40, ], coords_utm[27, ])
-trap_dist_F <- spDistsN1(coords_utm[41:47, ], coords_utm[41, ])
-trap_dist_G <- spDistsN1(coords_utm[48:54, ], coords_utm[48, ])
-trap_dist_J <- spDistsN1(coords_utm[61:70, ], coords_utm[61, ])
-trap_dist_K <- spDistsN1(coords_utm[71:80, ], coords_utm[71, ])
-trap_dist_L <- spDistsN1(coords_utm[81:90, ], coords_utm[81, ])
-trap_dist_M <- spDistsN1(coords_utm[91:102, ], coords_utm[91, ])
-trap_dist_N <- spDistsN1(coords_utm[103:112, ], coords_utm[103, ])
-trap_dist_O <- spDistsN1(coords_utm[113:122, ], coords_utm[113, ])
+# order of sites - (2,4,6,7,1,9,8,3,5,10,11,12)
+trap_dist_2 <- spDistsN1(coords_utm[1:8, ], coords_utm[1, ])
+trap_dist_4 <- spDistsN1(coords_utm[9:18, ], coords_utm[9, ])
+trap_dist_6 <- spDistsN1(coords_utm[19:26, ], coords_utm[19, ])
+trap_dist_7 <- spDistsN1(coords_utm[27:40, ], coords_utm[27, ])
+trap_dist_1 <- spDistsN1(coords_utm[41:47, ], coords_utm[41, ])
+trap_dist_9 <- spDistsN1(coords_utm[48:54, ], coords_utm[48, ])
+trap_dist_8 <- spDistsN1(coords_utm[61:70, ], coords_utm[61, ])
+trap_dist_3 <- spDistsN1(coords_utm[71:80, ], coords_utm[71, ])
+trap_dist_5 <- spDistsN1(coords_utm[81:90, ], coords_utm[81, ])
+trap_dist_10 <- spDistsN1(coords_utm[91:102, ], coords_utm[91, ])
+trap_dist_11 <- spDistsN1(coords_utm[103:112, ], coords_utm[103, ])
+trap_dist_12 <- spDistsN1(coords_utm[113:122, ], coords_utm[113, ])
 
-trap_dist_list <- list(trap_dist_A, trap_dist_C, trap_dist_D, trap_dist_E,
-                       trap_dist_F, trap_dist_G, trap_dist_J, trap_dist_K,
-                       trap_dist_L, trap_dist_M, trap_dist_N, trap_dist_O)
-# trap_locs <- trap_dist_list
+trap_dist_list <- list(trap_dist_1, trap_dist_2, trap_dist_3, trap_dist_4,
+                       trap_dist_5, trap_dist_6, trap_dist_7, trap_dist_8,
+                       trap_dist_9, trap_dist_10, trap_dist_11, trap_dist_12)
 
 trap_locs <- matrix(NA, 12, max(n_traps_site$max_traps))
 for (i in 1:12) {
@@ -108,6 +110,11 @@ EM_CPIC <- EDF_CPIC %>%
          # ,
          # site_id_ck = paste0(site, "_", ind))
 
+old <- 1:12
+new <- c(2,4,6,7,1,9,8,3,5,10,11,12)
+
+EM_CPIC$site_num <- as.integer(as.character(factor(EM_CPIC$site_num, old, new)))
+
 
 # y[i,j,k,l] individual x trap x occassion x site
 # to be the same size for an array will need to augment at least up to that while building array. Maybe could use nimbleList(). Not sure it's worth it since augmenting anyway and not sure how to use within BUGS code.
@@ -142,12 +149,15 @@ EM_CPIC_expanded <- EM_CPIC %>%
   # ungroup() %>%
   # mutate(id = as.integer(as.factor(ind)))
 
+EM_CPIC_expanded$site_num <- as.integer(as.character(factor(EM_CPIC_expanded$site_num, old, new)))
+
 # expected sizes for each individual at each site x trap x day
 n_ind_site$n * 14 * 4
 sum(n_ind_site$n * 14 * 4)
 sum(n_ind_site$n * 14 * 4) == nrow(EM_CPIC_expanded)
 
 summary(EM_CPIC_expanded)
+
 
 em_cpic_wide <- EM_CPIC_expanded %>%
   arrange(trap, site_num, id_site, day) %>%
@@ -165,6 +175,7 @@ ind_covs <- EDF %>%
             mass = mean(mass),
             n_measurements = n(),
             mean_trap = mean(trap))
+
 
 ind_covs_cpic <- ind_covs %>%
   filter(species == "CPIC",
