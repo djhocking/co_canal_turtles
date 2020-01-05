@@ -93,6 +93,12 @@ EDF <- EDF %>%
 EDF_CPIC <- EDF %>%
   filter(site != "H" & site != "I" & species == "CPIC")
 
+old <- c("A", "C", "D", "E", "F", "G", "J", "K", "L", "M", "N", "O")
+new <- c(2,4,6,7,1,9,8,3,5,10,11,12)
+
+EDF_CPIC$site <- as.integer(as.character(factor(EDF_CPIC$site, old, new)))
+
+
 ## subtract 6 from trap ids > = 61 (Sites H and I)
 # EDF_CPIC$trap_id_edited <- ifelse(EDF_CPIC$trap_id >= 61, EDF_CPIC$trap_id - 6, EDF_CPIC$trap_id - 0)
 
@@ -131,6 +137,8 @@ n_ind_site <- EM_CPIC %>%
   select(site, site_num, id_site) %>%
   distinct() %>%
   summarise(n = max(id_site))
+
+n_ind_site[order(n_ind_site$site_num), ]
 
 n_sites <- length(unique(n_ind_site$site))
 n_days <- 4
@@ -201,7 +209,7 @@ length(EM_array[!is.na(EM_array)]) # Number of datapoints contributing to the li
 psi_st <- 0.2
 Z_st <- matrix(rbinom(max(M), 1, psi_st), n_sites, max(M))
 for(l in 1:n_sites) {
-  Z_st[l, 1:n_ind_site$n[l]] <- 1
+  Z_st[l, 1:n_ind_site$n[l]] <- 1 ##?
 }
 psi_sex_st <- 0.5
 

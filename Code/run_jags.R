@@ -7,7 +7,7 @@ library(jagsUI)
 ######### Load Data from Previous script #########
 
 testing <- TRUE
-run_date <- "2019-12-19"
+run_date <- Sys.Date()
 
 if(testing) {
   ni = 101
@@ -38,7 +38,7 @@ EDF_CPIC <- EDF %>%
   filter(site != "H" & site != "I" & species == "CPIC")
 str(EDF_CPIC)
 
-# get number of unique individuals caught per site
+# get number of unique individuals caught per site, with spatially relevant site IDs
 inds <- EDF_CPIC %>%
   group_by(site) %>%
   select(site, ind) %>%
