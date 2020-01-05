@@ -71,7 +71,7 @@ model{
   beta_2 ~ dnorm(0, pow(10, -2))
   beta_3 ~ dnorm(0, pow(10, -2))
   # alpha_1_int ~ dnorm(0, pow(3, -2))
-  psi_sex[t] ~ dbeta(1, 1)
+  psi_sex ~ dbeta(1, 1)
   
   for(g in 1:n_sites) {
     psi[g] ~ dbeta(1, 1) # prob of individual being in the population
@@ -87,8 +87,8 @@ model{
     }
                  
      for(i in 1:M[g]) {  ## here
-     Sex[t,i] ~ dbern(psi_sex)
-     Sex2[t,i] <- Sex[t, i] + 1
+     Sex[g, i] ~ dbern(psi_sex)
+     Sex2[g, i] <- Sex[g, i] + 1
      z[g, i] ~ dbern(psi[g])
      s[g, i] ~ dunif(xlim[g, 1], xlim[g, 2])
       
@@ -96,7 +96,7 @@ model{
         d[g,i,j] <- abs(s[g, i] - trap_locs[g, j])
                  
         for(k in 1:K) {
-          p[g, i, j, k] <- p0[g, i, j, k] * exp(-1 * alpha1[Sex2[i]] * d[g, i, j] * d[g, i, j])
+          p[g, i, j, k] <- p0[g, i, j, k] * exp(-1 * alpha1[Sex2[g, i]] * d[g, i, j] * d[g, i, j])
             } # k
           } # j
         } # i
