@@ -38,18 +38,7 @@ EDF_CPIC <- EDF %>%
   filter(site != "H" & site != "I" & species == "CPIC")
 str(EDF_CPIC)
 
-# get number of unique individuals caught per site, with spatially relevant site IDs
-inds <- EDF_CPIC %>%
-  group_by(site) %>%
-  select(site, ind) %>%
-  distinct() %>%
-  summarise(individuals = n())
 
-# assume capture rate of min_cap_rate (~0.03) to get max individuals to augment (M[g])
-min_cap_rate <- 0.02
-df_M <- inds %>%
-  mutate(M = individuals / min_cap_rate)
-df_M
 
 # restrict M to being the maximum size of the data array so the jags loops doesn't go out of bounds
 M <- if_else(df_M$M > M, M, trunc(df_M$M))
@@ -201,23 +190,23 @@ initsf <- function() {
 parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "alpha_1_sex", "beta_0", "beta_1", "beta_2", "beta_3", "sigma_mean", "psi_sex", "p_cap_day", "p_cap_sex", "mu_psi", "sd_psi", "sigma_mean", "sigma_sex", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 start_zeros <- Sys.time()
-cl <- makeCluster(nc)                       # Request # cores
-clusterExport(cl, c("scr_zeros", "jags_data_site", "initsf", "parameters", "EM_array", "sex", "trap_locs", "n_days", "M", "xlim", "n_traps_site", "forest_std", "depth_std", "n_sites", "recaptured", "n_ind_site", "Z_st", "s_st", "psi_st", "ni", "nb", "nt", "nc")) # Make these available
-
-clusterSetRNGStream(cl = cl, 54354354)
+# cl <- makeCluster(nc)                       # Request # cores
+# clusterExport(cl, c("scr_zeros", "jags_data_site", "initsf", "parameters", "EM_array", "sex", "trap_locs", "n_days", "M", "xlim", "n_traps_site", "forest_std", "depth_std", "n_sites", "recaptured", "n_ind_site", "Z_st", "s_st", "psi_st", "ni", "nb", "nt", "nc")) # Make these available
+# 
+# clusterSetRNGStream(cl = cl, 54354354)
 
 
 out <- jagsUI(data = jags_data_site, 
               inits = initsf, 
               model.file = "Code/JAGS/zero_test.txt", 
-              n.chains = 2,
-              n.iter = 101, 
-              n.burnin = 100, 
-              n.thin = 1, 
+              n.chains = nc,
+              n.iter = ni, 
+              n.burnin = nb, 
+              n.thin = nt, 
               parallel = TRUE, 
               codaOnly = parameters, 
               parameters.to.save = parameters)
 
 end_zeros <- Sys.time()
 
-stopCluster(cl)
+# stopCluster(cl)

@@ -18,6 +18,8 @@ if(testing) {
   M <- 700
 }
 
+min_cap_rate <- 0.015
+
 site_num_spatial <- as.matrix(cbind(c(2,4,6,7,1,9,8,3,5,10,11,12), 
 c("A","C","D","E","F","G","J","K","L","M","N","O")))
 
@@ -122,6 +124,13 @@ new <- c(2,4,6,7,1,9,8,3,5,10,11,12)
 EM_CPIC$site_num <- as.integer(as.character(factor(EM_CPIC$site_num, old, new)))
 
 
+# get number of unique individuals caught per site, with spatially relevant site IDs
+# inds <- EDF_CPIC %>%
+#   group_by(site) %>%
+#   select(site, ind) %>%
+#   distinct() %>%
+#   summarise(individuals = n())
+
 # y[i,j,k,l] individual x trap x occassion x site
 # to be the same size for an array will need to augment at least up to that while building array. Maybe could use nimbleList(). Not sure it's worth it since augmenting anyway and not sure how to use within BUGS code.
 
@@ -138,7 +147,12 @@ n_ind_site <- EM_CPIC %>%
   distinct() %>%
   summarise(n = max(id_site))
 
-n_ind_site[order(n_ind_site$site_num), ]
+# assume capture rate of min_cap_rate (~0.03) to get max individuals to augment (M[g])
+df_M <- n_ind_site %>%
+  mutate(M = n / min_cap_rate + 10)
+df_M
+
+n_ind_site[order(n_ind_site$site_num), ] # orderin by the old site number and not the new site
 
 n_sites <- length(unique(n_ind_site$site))
 n_days <- 4
@@ -152,12 +166,9 @@ EM_CPIC_expanded <- EM_CPIC %>%
   mutate(id_site = as.integer(as.factor(ind))) %>%
   ungroup() %>%
   mutate(site_num = as.integer(as.factor(site))) %>%
+  select(-site) %>%
   left_join(n_traps_site) %>%
   mutate(count = if_else(is.na(count) & trap <= max_traps, 0, count)) # %>%
-  # ungroup() %>%
-  # mutate(id = as.integer(as.factor(ind)))
-
-EM_CPIC_expanded$site_num <- as.integer(as.character(factor(EM_CPIC_expanded$site_num, old, new)))
 
 # expected sizes for each individual at each site x trap x day
 n_ind_site$n * 14 * 4
@@ -307,9 +318,9 @@ augs <- matrix(0, n_sites, max(M))
 if(!dir.exists("Data/Derived")) dir.create("Data/Derived", recursive = TRUE)
 
 if(testing) {
-  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, file = paste0("Data/Derived/all_site_testing_", run_date, ".RData"))
+  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, df_M, file = paste0("Data/Derived/all_site_testing_", run_date, ".RData"))
 } else {
-  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, file = "Data/Derived/all_site.RData") # other objects needed?
+  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, df_M, file = "Data/Derived/all_site.RData") # other objects needed?
 }
 
 rm(list = ls())
