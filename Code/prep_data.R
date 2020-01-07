@@ -22,11 +22,11 @@ site_num_spatial <- as.matrix(cbind(c(2,4,6,7,1,9,8,3,5,10,11,12),
 c("A","C","D","E","F","G","J","K","L","M","N","O")))
 
 Sites <- read.csv(file = "Data/trapids_sites.csv", header = TRUE, stringsAsFactors = FALSE)
-Sites$site_num <- as.integer(site_num_spatial[ ,1])
+Sites$site_num <- as.integer(site_num_spatial[ , 1])
 coords <- read.csv(file = "Data/coords.csv", stringsAsFactors = FALSE)
 EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
 n_traps_site <- read.csv(file = "Data/Max_Traps_Site.csv", stringsAsFactors = FALSE) # number of traps per site
-n_traps_site$site_num <- as.integer(site_num_spatial[ ,1])
+n_traps_site$site_num <- as.integer(site_num_spatial[ , 1])
 n_traps_site <- n_traps_site[order(n_traps_site$site_num), ]
 n_traps <- n_traps_site$max_traps
 # K <- max(EDF$day)
