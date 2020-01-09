@@ -115,41 +115,32 @@ model{
     #  } # k
       zeros[i, g] ~ dbern(1 - prod(p[g, 1:M[g], 1:max_trap[g], k] * z[g, i]))
     } # i
-}
+} # g
     
     # Derived parameters
+    for(g in 1:n_sites) {
     N[g] <- sum(z[g , 1:M[g]])
     density[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
     
-   for(k in 1:K) {
-     for(g in 1:n_sites) { 
-        p_cap_site_day[g, k] <- mean(p[g, 1:M[g], 1:max_trap[g], k])
-        }
-      p_cap_day[k] <- mean(p_cap_site_day[ , k])
-   }
-
-for(t in 1:2) {
-      for(g in 1:n_sites) {
-        for(i in 1:M[g]) {
-          p_cap_ind_site[i, g] <- mean(p0[g, i, 1:max_trap[g], 1:K])
-        }
-        p_cap_site[g] <- mean(p_cap_ind_site[1:M[g], g])
-      }
-      p_cap_sex[t] <- mean(p_cap_sex[t])
-      sigma_sex[t] <- mean(sigma[t])
-}
-
-sigma_mean <- mean(sigma[ ])
+    p_cap_site[g] <- n0[g] / N[g]
     
-    # for(g in 1:n_sites) {
-    #   for(i in 1:M[g]) {
-    # #     p_cap_site_ind[g, i] <- sum(p[g, i, 1:max_trap[g], 1:K])
-    # #   }
-    # #   p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
-    # # }
+    for(t in 1:2) {
+p_site_sex[g, t] <- 1 - prod(1 - p[g, Sex2[g, i], 1:max_trap[g], 1:K])
+    } # t
+  } # g
 
     site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
   } # g
+  
+  N_total <- sum(N[1:n_sites])
+  for(k in 1:K) {
+    p_cap_day[k] <- caps_day[k] / N_total
+  }
+  
+  for(t in 1:2) {
+    p_cap_sex[t] <- mean(p_site_sex[1:n_sites, t])
+    sigma_mean <- mean(sigma[t])
+  } # t end sex loop
   
 }
 ", file = "Code/JAGS/zero_test.txt")
@@ -177,7 +168,8 @@ jags_data_site <- list(y = EM_array,
                        C = recaptured, 
                        zeros = matrix(0, max(M), n_sites),
                        n_sites = n_sites,
-                       n0 = n_ind_site$n)
+                       n0 = n_ind_site$n,
+                       caps_day = caps_day$caps)
 
 initsf <- function() {
   list(s = s_st, 
@@ -186,7 +178,7 @@ initsf <- function() {
        psi_sex = runif(1, 0.3, 0.8))
 }
 
-parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "alpha_1_sex", "beta_0", "beta_1", "beta_2", "beta_3", "sigma_mean", "psi_sex", "p_cap_day", "p_cap_sex", "mu_psi", "sd_psi", "sigma_mean", "sigma_sex", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
+parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "alpha_1_sex", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "p_cap_sex", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 start_zeros <- Sys.time()
 # cl <- makeCluster(nc)                       # Request # cores

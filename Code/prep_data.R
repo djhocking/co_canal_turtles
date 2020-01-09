@@ -294,6 +294,13 @@ for(l in 1:n_sites) {
 
 augs <- matrix(0, n_sites, max(M))
 
+###### Number of individuals caught per day across sites #####
+
+caps_day <- EM_CPIC_expanded %>%
+  ungroup() %>%
+  group_by(day) %>%
+  summarise(caps = sum(count, na.rm = TRUE))
+
 #### Create matrix changing site IDs to be spatially relevant ####
 # Matrix with current site IDs (which are sequential temporally) and spatially sequential site IDs
 
@@ -303,9 +310,9 @@ augs <- matrix(0, n_sites, max(M))
 if(!dir.exists("Data/Derived")) dir.create("Data/Derived", recursive = TRUE)
 
 if(testing) {
-  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, df_M, file = paste0("Data/Derived/all_site_testing_", run_date, ".RData"))
+  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, df_M, caps_day, file = paste0("Data/Derived/all_site_testing_", run_date, ".RData"))
 } else {
-  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, df_M, file = "Data/Derived/all_site.RData") # other objects needed?
+  save(recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, df_M, caps_day, file = "Data/Derived/all_site.RData") # other objects needed?
 }
 
 rm(list = ls())
