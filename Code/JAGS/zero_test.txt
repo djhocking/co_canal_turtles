@@ -88,9 +88,10 @@ p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
     p_cap_day[k] <- caps_day[k] / N_total
   }
   
-  for(t in 1:2) {
+  # for(t in 1:2) {
     # p_cap_sex[t] <- mean(p_site_sex[1:n_sites, t])
-    sigma_mean <- mean(sigma[t])
-  } # t end sex loop
+  # } # t end sex loop
+  
+  sigma_mean <- mean(sigma[1:2])
   
 }

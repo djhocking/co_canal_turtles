@@ -201,4 +201,6 @@ out <- jagsUI(data = jags_data_site,
 
 end_zeros <- Sys.time()
 
+end_zeros - start_zeros
+
 # stopCluster(cl)
