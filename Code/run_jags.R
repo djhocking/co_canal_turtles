@@ -31,13 +31,12 @@ if(testing) {
 }
 
 # make M variable by site to speed code
-EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
-
-#Take out sites H and I
-EDF_CPIC <- EDF %>%
-  filter(site != "H" & site != "I" & species == "CPIC")
-str(EDF_CPIC)
-
+# EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
+# 
+# #Take out sites H and I
+# EDF_CPIC <- EDF %>%
+#   filter(site != "H" & site != "I" & species == "CPIC")
+# str(EDF_CPIC)
 
 
 # restrict M to being the maximum size of the data array so the jags loops doesn't go out of bounds
@@ -156,9 +155,9 @@ sigma_mean <- mean(sigma[ ])
 ", file = "Code/JAGS/zero_test.txt")
 
 ######### Set data and MCMC Conditions ########
-forest <- read.csv(file = "Data/LandUse/Forest_Cover_SingleColumn.csv", header = FALSE)
-depth <- read.csv(file = "Data/LandUse/Avg_Depth_m.csv", header = TRUE)
-width <- read.csv(file = "Data/LandUse/Width_m.csv", header = TRUE)
+forest <- read.csv(file = "Data/LandUse/Forest_Cover_Spatial.csv", header = FALSE)
+depth <- read.csv(file = "Data/LandUse/Avg_Depth_Spatial.csv", header = TRUE)
+width <- read.csv(file = "Data/LandUse/Width_Spatial.csv", header = TRUE)
 
 forest_std <- as.numeric(scale(forest))
 depth_std <- as.numeric(scale(depth))
