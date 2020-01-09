@@ -74,7 +74,7 @@ model{
       alpha0[g, k] ~ dnorm(mu_0, sd_0)
     }
                  
-     for(i in 1:M[g]) {  ## here
+     for(i in 1:M[g]) { 
      Sex[g, i] ~ dbern(psi_sex)
      Sex2[g, i] <- Sex[g, i] + 1
      z[g, i] ~ dbern(psi[g])
@@ -124,9 +124,9 @@ model{
     
     p_cap_site[g] <- n0[g] / N[g]
     
-    for(t in 1:2) {
-p_site_sex[g, t] <- 1 - prod(1 - p[g, Sex2[g, i], 1:max_trap[g], 1:K])
-    } # t
+    for(i in 1:M[g]) {
+p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
+    } # i
   } # g
 
     site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
@@ -138,7 +138,7 @@ p_site_sex[g, t] <- 1 - prod(1 - p[g, Sex2[g, i], 1:max_trap[g], 1:K])
   }
   
   for(t in 1:2) {
-    p_cap_sex[t] <- mean(p_site_sex[1:n_sites, t])
+    # p_cap_sex[t] <- mean(p_site_sex[1:n_sites, t])
     sigma_mean <- mean(sigma[t])
   } # t end sex loop
   
@@ -178,7 +178,7 @@ initsf <- function() {
        psi_sex = runif(1, 0.3, 0.8))
 }
 
-parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "alpha_1_sex", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "p_cap_sex", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
+parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "p_site_ind", "Sex", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 start_zeros <- Sys.time()
 # cl <- makeCluster(nc)                       # Request # cores
