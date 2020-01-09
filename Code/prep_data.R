@@ -20,15 +20,15 @@ if(testing) {
 
 min_cap_rate <- 0.015
 
-site_num_spatial <- as.matrix(cbind(c(2,4,6,7,1,9,8,3,5,10,11,12), 
-c("A","C","D","E","F","G","J","K","L","M","N","O")))
+site_index <- read.csv(file = "Data/site_index.csv", header = TRUE, stringsAsFactors = FALSE)
 
-Sites <- read.csv(file = "Data/trapids_sites.csv", header = TRUE, stringsAsFactors = FALSE)
-Sites$site_num <- as.integer(site_num_spatial[ , 1])
+sites <- read.csv(file = "Data/trapids_sites.csv", header = TRUE, stringsAsFactors = FALSE)
+sites <- left_join(sites, site_index, by = "site")
 coords <- read.csv(file = "Data/coords.csv", stringsAsFactors = FALSE)
 EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
-n_traps_site <- read.csv(file = "Data/Max_Traps_Site.csv", stringsAsFactors = FALSE) # number of traps per site
-n_traps_site$site_num <- as.integer(site_num_spatial[ , 1])
+EDF <- left_join(EDF, site_index, by = "site")
+n_traps_site <- read.csv(file = "Data/max_traps_site.csv", stringsAsFactors = FALSE) # number of traps per site
+n_traps_site <- left_join(n_traps_site, site_index, by = "site")
 n_traps_site <- n_traps_site[order(n_traps_site$site_num), ]
 n_traps <- n_traps_site$max_traps
 # K <- max(EDF$day)
@@ -95,33 +95,23 @@ EDF <- EDF %>%
 EDF_CPIC <- EDF %>%
   filter(site != "H" & site != "I" & species == "CPIC")
 
-old <- c("A", "C", "D", "E", "F", "G", "J", "K", "L", "M", "N", "O")
-new <- c(2,4,6,7,1,9,8,3,5,10,11,12)
 
-EDF_CPIC$site <- as.integer(as.character(factor(EDF_CPIC$site, old, new)))
+EDF_CPIC <- left_join(EDF_CPIC, site_index, by = "site")
 
-
-## subtract 6 from trap ids > = 61 (Sites H and I)
-# EDF_CPIC$trap_id_edited <- ifelse(EDF_CPIC$trap_id >= 61, EDF_CPIC$trap_id - 6, EDF_CPIC$trap_id - 0)
 
 ##### Want EM ARRAY with ijk with index for site ########
 EM_CPIC <- EDF_CPIC %>%
-  group_by(site, ind, trap, day, sex) %>%
-  select(site, ind, trap, day, sex) %>%
+  group_by(site_num, ind, trap, day, sex) %>%
+  select(site_num, ind, trap, day, sex) %>%
   mutate(count = 1) %>%
   summarise(count = sum(count)) %>%
   ungroup() %>%
-  group_by(site) %>%
+  group_by(site_num) %>%
   mutate(id_site = as.integer(as.factor(ind))) %>%
-  ungroup() %>%
-  mutate(site_num = as.integer(as.factor(site)))
+  ungroup() #%>%
+  #mutate(site_num = as.integer(as.factor(site)))
          # ,
          # site_id_ck = paste0(site, "_", ind))
-
-old <- 1:12
-new <- c(2,4,6,7,1,9,8,3,5,10,11,12)
-
-EM_CPIC$site_num <- as.integer(as.character(factor(EM_CPIC$site_num, old, new)))
 
 
 # get number of unique individuals caught per site, with spatially relevant site IDs
@@ -142,8 +132,8 @@ EM_CPIC$site_num <- as.integer(as.character(factor(EM_CPIC$site_num, old, new)))
 # fill into array (loop by site and day)
 
 n_ind_site <- EM_CPIC %>%
-  group_by(site, site_num) %>%
-  select(site, site_num, id_site) %>%
+  group_by(site_num) %>%
+  select(site_num, id_site) %>%
   distinct() %>%
   summarise(n = max(id_site))
 
@@ -152,22 +142,20 @@ df_M <- n_ind_site %>%
   mutate(M = n / min_cap_rate + 10)
 df_M
 
-n_ind_site[order(n_ind_site$site_num), ] # orderin by the old site number and not the new site
-
-n_sites <- length(unique(n_ind_site$site))
+n_sites <- length(unique(n_ind_site$site_num))
 n_days <- 4
 
 EM_CPIC_expanded <- EM_CPIC %>%
-  expand(nesting(site, ind), trap, day) %>%
+  expand(nesting(site_num, ind), trap, day) %>%
   left_join(EM_CPIC) %>%
   select(-sex) %>%
   ungroup() %>%
-  group_by(site) %>%
+  group_by(site_num) %>%
   mutate(id_site = as.integer(as.factor(ind))) %>%
   ungroup() %>%
-  mutate(site_num = as.integer(as.factor(site))) %>%
-  select(-site) %>%
+  #mutate(site_num = as.integer(as.factor(site))) %>%
   left_join(n_traps_site) %>%
+  select(-site) %>%
   mutate(count = if_else(is.na(count) & trap <= max_traps, 0, count)) # %>%
 
 # expected sizes for each individual at each site x trap x day
@@ -188,8 +176,8 @@ summary(em_cpic_wide)
 
 # Separate individual characteristics to use if wanted
 ind_covs <- EDF %>%
-  group_by(site, ind, species, sex) %>%
-  select(site, ind, sex, species, carapace, mass, trap) %>%
+  group_by(site_num, site, ind, species, sex) %>%
+  select(site_num, site, ind, sex, species, carapace, mass, trap) %>%
   summarise(carapace = mean(carapace),
             mass = mean(mass),
             n_measurements = n(),
@@ -284,9 +272,9 @@ EM_CPIC_expanded
 em_cpic_wide
 
 recaps <- EM_CPIC_expanded %>%
-  group_by(site, ind, id_site, site_num, day) %>%
+  group_by(site_num, ind, id_site, day) %>%
   summarise(count = sum(count, na.rm = TRUE)) %>%
-  group_by(site, ind, id_site, site_num) %>%
+  group_by(site_num, ind, id_site) %>%
   mutate(caps = cumsum(count),
          recap = caps - count)
 
