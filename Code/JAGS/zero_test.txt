@@ -48,49 +48,32 @@ model{
         }
       }
     }
-    
-    for(i in 1:n0[g]) {
-      for(j in 1:max_trap[g]) { 
-        for(k in 1:K) {
-          y[i, j, k, g] ~ dbern(p[g, i, j, k])
-          logit(p0[g, i, j, k]) <- alpha0[g, k] + (alpha2 * C[i, k, g])
-        }
-      }
-    }
                  
     for(i in (n0[g] + 1):M[g]) {
       for(k in 1:K) {
         for(j in 1:max_trap[g]) {
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
-    #  } # k
-      zeros[i, g] ~ dbern(1 - prod(p[g, 1:M[g], 1:max_trap[g], k] * z[g, i]))
+      } # k
+      zeros[i, g] ~ dbern(1 - prod(p[g, 1:M[g], 1:max_trap[g], 1:K] * z[g, i]))
     } # i
-} # g
     
     # Derived parameters
-    for(g in 1:n_sites) {
     N[g] <- sum(z[g , 1:M[g]])
     density[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
     
-    p_cap_site[g] <- n0[g] / N[g]
+    p_cap_site[g] <- n0[g] / sum(z[g , 1:M[g]])
     
     for(i in 1:M[g]) {
 p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
     } # i
-  } # g
 
     site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
   } # g
   
-  N_total <- sum(N[1:n_sites])
   for(k in 1:K) {
-    p_cap_day[k] <- caps_day[k] / N_total
+    p_cap_day[k] <- caps_day[k] / sum(N[1:n_sites])
   }
-  
-  # for(t in 1:2) {
-    # p_cap_sex[t] <- mean(p_site_sex[1:n_sites, t])
-  # } # t end sex loop
   
   sigma_mean <- mean(sigma[1:2])
   
