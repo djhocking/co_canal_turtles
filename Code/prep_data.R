@@ -96,9 +96,6 @@ EDF_CPIC <- EDF %>%
   filter(site != "H" & site != "I" & species == "CPIC")
 
 
-EDF_CPIC <- left_join(EDF_CPIC, site_index, by = "site")
-
-
 ##### Want EM ARRAY with ijk with index for site ########
 EM_CPIC <- EDF_CPIC %>%
   group_by(site_num, ind, trap, day, sex) %>%
