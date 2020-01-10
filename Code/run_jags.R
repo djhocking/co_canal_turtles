@@ -104,7 +104,7 @@ model{
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
       } # k
-      zeros[i, g] ~ dbern(1 - prod(p[g, 1:M[g], 1:max_trap[g], 1:K] * z[g, i]))
+      zeros[i, g] ~ dbern(1 - prod(p[g, i, 1:max_trap[g], 1:K] * z[g, i]))
     } # i
     
     # Derived parameters
@@ -156,7 +156,7 @@ jags_data_site <- list(y = EM_array,
                        caps_day = caps_day$caps)
 
 initsf <- function() {
-  list(s = s_st, 
+  list(#s = s_st, 
        z = Z_st, 
        psi = runif(n_sites, psi_st * 0.5, psi_st*2), 
        psi_sex = runif(1, 0.3, 0.8))
