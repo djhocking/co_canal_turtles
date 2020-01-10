@@ -27,7 +27,7 @@ sites <- left_join(sites, site_index, by = "site")
 coords <- read.csv(file = "Data/coords.csv", stringsAsFactors = FALSE)
 EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
 EDF <- left_join(EDF, site_index, by = "site")
-n_traps_site <- read.csv(file = "Data/max_traps_site.csv", stringsAsFactors = FALSE) # number of traps per site
+n_traps_site <- read.csv(file = "Data/Max_Traps_Site.csv", stringsAsFactors = FALSE) # number of traps per site
 n_traps_site <- left_join(n_traps_site, site_index, by = "site")
 n_traps_site <- n_traps_site[order(n_traps_site$site_num), ]
 n_traps <- n_traps_site$max_traps
