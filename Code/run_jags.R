@@ -43,6 +43,12 @@ if(testing) {
 M <- if_else(df_M$M > M, M, trunc(df_M$M))
 # M <- if_else(df_M$M < max_ind_sp, max_ind_sp, M) # real captures can be up to row 750 at any site, all after are definitely augmentation - not anymore
 
+zeros <- matrix(NA, max(M), n_sites)
+for(z in 1:n_sites) {
+zoo = matrix(0, n_ind_site$n[z], 1)
+zeros[ , z] = rbind(zoo, matrix(NA, M[z] - n_ind_site$n[z], 1))
+}
+
 
 ######### JAGS Model with Zero Trick ##########
 
@@ -150,7 +156,7 @@ jags_data_site <- list(y = EM_array,
                        width = width_std,
                        site_zeros = rep(0, n_sites),
                        C = recaptured, 
-                       zeros = matrix(0, max(M), n_sites),
+                       zeros = zeros,
                        n_sites = n_sites,
                        n0 = n_ind_site$n,
                        caps_day = caps_day$caps)

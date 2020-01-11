@@ -15,7 +15,7 @@ run_date <- Sys.Date()
 # number of possible individuals per site
 M <- 7000 
 if(testing) {
-  M <- 700
+  M <- 125
 }
 
 min_cap_rate <- 0.015
@@ -303,6 +303,7 @@ caps_day <- EM_CPIC_expanded %>%
 
 #### Create matrix changing site IDs to be spatially relevant ####
 # Matrix with current site IDs (which are sequential temporally) and spatially sequential site IDs
+
 
 
 ########## SAVE ALL OBJECTS NEEDED FOR MODEL ##########
