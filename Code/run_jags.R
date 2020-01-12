@@ -117,7 +117,7 @@ model{
     N[g] <- sum(z[g , 1:M[g]])
     density[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
     
-    #p_cap_site[g] <- n0[g] / sum(z[g , 1:M[g]])
+    p_cap_site[g] <- n0[g] / sum(z[g , 1:M[g]])
     
     for(i in 1:M[g]) {
 p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
@@ -161,11 +161,28 @@ jags_data_site <- list(y = EM_array,
                        n0 = n_ind_site$n,
                        caps_day = caps_day$caps)
 
+# z_starts <- function(n_ind, M, n_sites) {
+#   psi_st <- runif(1, 0.05, 0.2)
+#   Z_st <- matrix(rbinom(max(M), 1, psi_st), n_sites, max(M))
+#   for(l in 1:n_sites) {
+#     Z_st[l, 1:n_ind[l]] <- 1 ##?
+#   }
+#   return(list(Z_st, psi))
+# }
+
 initsf <- function() {
+  psi_st <- runif(1, 0.05, 0.2)
+  Z_st <- matrix(rbinom(max(M), 1, psi_st), n_sites, max(M))
+  for(l in 1:n_sites) {
+    Z_st[l, 1:n_ind_site$n[l]] <- 1
+  }
+  
+  return(
   list(#s = s_st, 
        z = Z_st, 
-       psi = runif(n_sites, psi_st * 0.5, psi_st*2), 
+       psi = n_ind_site$n / rowSums(Z_st), 
        psi_sex = runif(1, 0.3, 0.8))
+  )
 }
 
 parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "p_site_ind", "Sex", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
