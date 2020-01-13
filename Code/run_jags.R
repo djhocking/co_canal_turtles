@@ -110,7 +110,7 @@ model{
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
       } # k
-      zeros[i, g] ~ dbern(1 - prod(p[g, i, 1:max_trap[g], 1:K] * z[g, i]))
+      zeros[i, g] ~ dbern((1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])) * z[g, i])
     } # i
     
     # Derived parameters
