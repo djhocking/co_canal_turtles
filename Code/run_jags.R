@@ -170,18 +170,25 @@ jags_data_site <- list(y = EM_array,
 #   return(list(Z_st, psi))
 # }
 
-## NOT WORKING
-# initsf <- function() {
-#   psi_st <- runif(1, 0.05, 0.2)
-#   Z_st <- matrix(rbinom(max(M), 1, psi_st), n_sites, max(M))
-#   for(l in 1:n_sites) {
-#     Z_st[l, 1:n_ind_site$n[l]] <- 1
-#   }
-
-## WORKING
+# needs testing - all z should be 1 or 0 and psi should be a vector of values between 0 and 1 that are based on z and n0.
 initsf <- function() {
   psi_st <- runif(1, 0.05, 0.2)
-  Z_st <- matrix(NA, n_sites, max(M))
+  Z_st <- matrix(rbinom(max(M), 1, psi_st), n_sites, max(M))
+  for(l in 1:n_sites) {
+    Z_st[l, 1:n_ind_site$n[l]] <- 1
+  }
+  return(
+    list(s = s_st, 
+         z = Z_st, 
+         psi = n_ind_site$n / rowSums(Z_st), 
+         psi_sex = runif(1, 0.3, 0.8))
+  )
+}
+
+## needs testing - all z should be 1 or 0 and psi should be a vector of values between 0 and 1 that are based on z and n0.
+initsf <- function() {
+  psi_st <- runif(1, 0.05, 0.2)
+  Z_st <- matrix(rbinom(n_sites * max(M, 1, psi_st)), n_sites, max(M))
   for(l in 1:n_sites) {
     zoo = matrix(1, 1, n_ind_site$n[l])
     Z_st[l, ] = cbind(zoo, matrix(NA, 1, M[l] - n_ind_site$n[l]))
