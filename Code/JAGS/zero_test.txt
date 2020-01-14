@@ -55,14 +55,14 @@ model{
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
       } # k
-      zeros[i, g] ~ dbern(1 - prod(p[g, i, 1:max_trap[g], 1:K] * z[g, i]))
+      zeros[i, g] ~ dbern((1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])) * z[g, i])
     } # i
     
     # Derived parameters
     N[g] <- sum(z[g , 1:M[g]])
     density[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
     
-    p_cap_site[g] <- n0[g] / sum(z[g , 1:M[g]])
+    p_cap_site[g] <- n0[g] / (n0[g] + sum(z[g , (n0[g]+1):M[g]]))
     
     for(i in 1:M[g]) {
 p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
