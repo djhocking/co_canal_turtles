@@ -221,16 +221,28 @@ s_st_obs <- EM_CPIC_expanded %>%
 # make augmented starting location dataframe - will have NA for augments
 s_st <- data.frame(expand.grid(site_num = 1:12, id_site = 1:max(M))) %>%
   left_join(s_st_obs) %>%
-  as_tibble()
+  as_tibble() %>%
+  arrange(site_num, id_site)
 
 # randomly assign locations within the limits of the site to augmented individuals
 s_st <- s_st %>%
   left_join(n_traps_site) %>%
-  mutate(loc = ifelse(is.na(loc), runif(1, -1.5, ((((max_traps - 1) * 25) + 150) / 100)), loc))
+  ungroup() %>%
+  as.data.frame()
+
+n_missing <- s_st %>%
+  filter(is.na(loc)) %>%
+  nrow()
+
+# s_st <- s_st %>%
+#   mutate(loc = if_else(is.na(loc), runif(n_missing, -1.5, ((((min(n_traps_site$max_traps) - 1) * 25) + 150) / 100)), loc)) 
+
+s_st[is.na(s_st)] <- runif(n_missing, -1.5, ((((min(n_traps_site$max_traps) - 1) * 25) + 150) / 100))
 
 summary(s_st)
+hist(s_st$loc)
 
-# Select useful rows and spread to site x individual for analysis
+# Select useful columns and spread to site x individual for analysis
 s_st <- s_st %>%
   select(site_num, id_site, loc) %>%
   pivot_wider(names_from = id_site, values_from = loc) %>%
