@@ -6,7 +6,7 @@ library(jagsUI)
 
 ######### Load Data from Previous script #########
 
-testing <- TRUE
+testing <- FALSE
 run_date <- Sys.Date()
 
 if(testing) {
@@ -181,7 +181,7 @@ initsf <- function() {
   psi_st <- runif(1, 0.05, 0.2)
   Z_st <- matrix(NA_integer_, n_sites, max(M))
   for(n in 1:n_sites) {
-    Z_st[n, 1:M[n]] <- rbinom(M[n], 1, psi_st)
+    Z_st[n, 1:M[n]] <- rbinom(M[n], 1, 1-psi_st)
     Z_st[n, 1:n_ind_site$n[n]] <- 1
   }
   s_st[is.na(Z_st)] <- NA
@@ -192,6 +192,8 @@ initsf <- function() {
          psi_sex = runif(1, 0.3, 0.8))
   )
 }
+
+rowSums(Z_st, na.rm = TRUE)
 
 ## not working: needs testing - all z should be 1 or 0 and psi should be a vector of values between 0 and 1 that are based on z and n0.
 # initsf <- function() {
