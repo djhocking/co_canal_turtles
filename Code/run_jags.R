@@ -43,12 +43,13 @@ if(testing) {
 M <- if_else(df_M$M > M, M, trunc(df_M$M))
 # M <- if_else(df_M$M < max_ind_sp, max_ind_sp, M) # real captures can be up to row 750 at any site, all after are definitely augmentation - not anymore
 
-zeros <- matrix(NA, max(M), n_sites)
-for(z in 1:n_sites) {
-zoo = matrix(0, n_ind_site$n[z], 1)
-zeros[ , z] = rbind(zoo, matrix(NA, M[z] - n_ind_site$n[z], 1))
-}
+# zeros <- matrix(NA, max(M), n_sites)
+# for(z in 1:n_sites) {
+# zoo = matrix(0, n_ind_site$n[z], 1)
+# zeros[ , z] = rbind(zoo, matrix(NA, M[z] - n_ind_site$n[z], 1))
+# }
 
+zeros <- matrix(0, max(M), n_sites)
 
 ######### JAGS Model with Zero Trick ##########
 
@@ -98,7 +99,7 @@ model{
     for(i in 1:n0[g]) {
       for(j in 1:max_trap[g]) { 
         for(k in 1:K) {
-          y[i, j, k, g] ~ dbern(p[g, i, j, k])
+          y[i, j, k, g] ~ dbern(p[g, i, j, k] * z[g, i])
           logit(p0[g, i, j, k]) <- alpha0[g, k] + (alpha2 * C[i, k, g])
         }
       }
@@ -110,7 +111,7 @@ model{
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
       } # k
-      zeros[i, g] ~ dbern((1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])) * z[g, i])
+      zeros[i, g] ~ dbern(prod(1 - p[g, i, 1:max_trap[g], 1:K]) * z[g, i])
     } # i
     
     # Derived parameters
@@ -171,12 +172,19 @@ jags_data_site <- list(y = EM_array,
 # }
 
 # needs testing - all z should be 1 or 0 and psi should be a vector of values between 0 and 1 that are based on z and n0.
+
+# replace values with NA for initial values outside the augment for each site. Should be done in the prep data but...
+
+
+
 initsf <- function() {
   psi_st <- runif(1, 0.05, 0.2)
-  Z_st <- matrix(rbinom(max(M), 1, psi_st), n_sites, max(M))
-  for(l in 1:n_sites) {
-    Z_st[l, 1:n_ind_site$n[l]] <- 1
+  Z_st <- matrix(NA_integer_, n_sites, max(M))
+  for(n in 1:n_sites) {
+    Z_st[n, 1:M[n]] <- rbinom(M[n], 1, psi_st)
+    Z_st[n, 1:n_ind_site$n[n]] <- 1
   }
+  s_st[is.na(Z_st)] <- NA
   return(
     list(s = s_st, 
          z = Z_st, 

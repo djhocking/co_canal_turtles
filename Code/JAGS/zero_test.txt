@@ -43,7 +43,7 @@ model{
     for(i in 1:n0[g]) {
       for(j in 1:max_trap[g]) { 
         for(k in 1:K) {
-          y[i, j, k, g] ~ dbern(p[g, i, j, k])
+          y[i, j, k, g] ~ dbern(p[g, i, j, k] * z[g, i])
           logit(p0[g, i, j, k]) <- alpha0[g, k] + (alpha2 * C[i, k, g])
         }
       }
@@ -55,7 +55,7 @@ model{
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
       } # k
-      zeros[i, g] ~ dbern((1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])) * z[g, i])
+      zeros[i, g] ~ dbern(prod(1 - p[g, i, 1:max_trap[g], 1:K]) * z[g, i])
     } # i
     
     # Derived parameters

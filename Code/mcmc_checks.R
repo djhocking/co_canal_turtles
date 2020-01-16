@@ -69,4 +69,12 @@ gelman.diag(samples[ , c("density[1]", "density[2]", "density[3]", "density[4]",
 # p <- mcmc_trace(samples, regex_pars = c("p_cap"))
 # p + facet_text(size = 15)
 
+library(rstan)
+sample_array <- as.array(samples)
+sample_array <- aperm(sample_array, c(1, 3, 2))
+mon <- monitor(sample_array, warmup = 0)
+rstan:::print.simsummary(mon)
+max(mon$Rhat)
+min(mon$Bulk_ESS)
+min(mon$Tail_ESS)
 
