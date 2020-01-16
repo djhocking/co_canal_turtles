@@ -6,7 +6,7 @@ library(jagsUI)
 
 ######### Load Data from Previous script #########
 
-testing <- FALSE
+testing <- TRUE
 run_date <- Sys.Date()
 
 if(testing) {
