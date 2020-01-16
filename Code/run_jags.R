@@ -188,7 +188,7 @@ initsf <- function() {
   return(
     list(s = s_st, 
          z = Z_st, 
-         psi = n_ind_site$n / rowSums(Z_st), 
+         psi = n_ind_site$n / rowSums(Z_st, na.rm = TRUE), 
          psi_sex = runif(1, 0.3, 0.8))
   )
 }
