@@ -10,10 +10,10 @@ testing <- TRUE
 run_date <- Sys.Date()
 
 if(testing) {
-  ni = 101
+  ni = 300
   nt = 1
-  nc = 2
-  nb = 1
+  nc = 20
+  nb = 200
 } else {
   na = 5000
   nb = 5000
@@ -46,7 +46,7 @@ M <- if_else(df_M$M > M, M, trunc(df_M$M))
 # zeros <- matrix(NA, max(M), n_sites)
 # for(z in 1:n_sites) {
 # zoo = matrix(0, n_ind_site$n[z], 1)
-# zeros[ , z] = rbind(zoo, matrix(NA, M[z] - n_ind_site$n[z], 1))
+# zeros[ , z] = rbind(zoo, matrix(NA, max(M) - n_ind_site$n[z], 1))
 # }
 
 zeros <- matrix(0, max(M), n_sites)
@@ -111,7 +111,7 @@ model{
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
       } # k
-      zeros[i, g] ~ dbern(1-prod(1 - p[g, i, 1:max_trap[g], 1:K]) * z[g, i])
+      zeros[i, g] ~ dbern(prod(p[g, i, 1:max_trap[g], 1:K]) * z[g, i])
     } # i
     
     # Derived parameters
