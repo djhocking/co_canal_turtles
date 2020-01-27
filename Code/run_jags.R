@@ -6,7 +6,7 @@ library(jagsUI)
 
 ######### Load Data from Previous script #########
 
-testing <- TRUE
+testing <- FALSE
 run_date <- Sys.Date()
 
 if(testing) {
@@ -15,11 +15,10 @@ if(testing) {
   nc = 20
   nb = 200
 } else {
-  na = 5000
-  nb = 5000
-  ni = 25000
-  nc = min(6, detectCores())
-  nt = 3
+  nb = 1000
+  ni = 7000
+  nc = 10
+  nt = 6
 }
 
 ######### Load Data from Previous script #########
@@ -111,7 +110,7 @@ model{
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
       } # k
-      zeros[i, g] ~ dbern(prod(p[g, i, 1:max_trap[g], 1:K]) * z[g, i])
+      zeros[i, g] ~ dbern(1- prod(p[g, i, 1:max_trap[g], 1:K]) * z[g, i])
     } # i
     
     # Derived parameters
