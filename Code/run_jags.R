@@ -212,7 +212,7 @@ rowSums(Z_st, na.rm = TRUE)
 #   )
 # }
 
-parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "p_site_ind", "Sex", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
+parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "p_site_ind", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site") ## "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 start_zeros <- Sys.time()
 # cl <- makeCluster(nc)                       # Request # cores
