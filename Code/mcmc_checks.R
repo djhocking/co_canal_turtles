@@ -1,6 +1,7 @@
 ########## Load Libraries ##########
 library(coda)
 library(rjags)
+library(nimble)
 # library(devtools)
 # install_github("https://github.com/stan-dev/bayesplot" # if want latest development version of bayesplot)
 library(bayesplot)
@@ -52,8 +53,8 @@ p + facet_text(size = 15)
 p <- mcmc_trace(samples, regex_pars = c("N"))
 p + facet_text(size = 15)
 
-p <- mcmc_trace(samples, regex_pars = c("mu_psi_site"))
-p + facet_text(size = 15)
+# p <- mcmc_trace(samples, regex_pars = c("mu_psi_site"))
+# p + facet_text(size = 15)
 
 # p <- mcmc_trace(samples, regex_pars = c("p_cap"))
 # p + facet_text(size = 15)
@@ -76,8 +77,16 @@ gelman.diag(samples[ , c("density[1]", "density[2]", "density[3]", "density[4]",
 
 library(rstan)
 sample_array <- as.array(samples)
-sample_array <- aperm(sample_array, c(1, 3, 2))
-mon <- monitor(sample_array, warmup = 0)
+sample_array <- aperm(sample_array, c(1, nc, 2))
+mon <- rstan::monitor(sample_array, warmup = 0)
+rstan:::print.simsummary(mon)
+max(mon$Rhat)
+min(mon$Bulk_ESS)
+min(mon$Tail_ESS)
+
+# for nimble
+sample_array <- base::array(as.numeric(unlist(samples)), dim=c(nrow(samples[[1]]), length(samples), ncol(samples[[1]])), dimnames = list(NULL, NULL, colnames(samples[[1]])))
+mon <- rstan::monitor(sample_array, warmup = 0)
 rstan:::print.simsummary(mon)
 max(mon$Rhat)
 min(mon$Bulk_ESS)

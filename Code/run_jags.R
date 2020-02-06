@@ -59,14 +59,14 @@ model{
   
   alpha2 ~ dnorm(0, pow(1.5, -2)) # Trap behavior universal distribution across sites
   mu_0 ~ dnorm(0, pow(1.5, -2))
-  sd_0 ~ dunif(0, 3)
+  sd_0 ~ dunif(0, 5)
   # alpha_1_sex ~ dnorm(0, pow(1.5, -2))
   beta_0 ~ dnorm(0, pow(10, -2))
   beta_1 ~ dnorm(0, pow(10, -2))
   beta_2 ~ dnorm(0, pow(10, -2))
   beta_3 ~ dnorm(0, pow(10, -2))
   # alpha_1_int ~ dnorm(0, pow(3, -2))
-  psi_sex ~ dbeta(1, 1)
+  psi_sex ~ dunif(0.1, 0.9)
   
   for(t in 1:2) {
   sigma[t] <- pow(1 / (2 * alpha1[t]), 0.5) # sd of half normal
@@ -75,7 +75,7 @@ model{
     }
     
   for(g in 1:n_sites) {
-    psi[g] ~ dbeta(1, 1) # prob of individual being in the population
+    psi[g] ~ dunif(0, 1) # prob of individual being in the population
     
     for(k in 1:K) {
       alpha0[g, k] ~ dnorm(mu_0, sd_0)
@@ -162,21 +162,6 @@ jags_data_site <- list(y = EM_array,
                        n0 = n_ind_site$n,
                        caps_day = caps_day$caps)
 
-# z_starts <- function(n_ind, M, n_sites) {
-#   psi_st <- runif(1, 0.05, 0.2)
-#   Z_st <- matrix(rbinom(max(M), 1, psi_st), n_sites, max(M))
-#   for(l in 1:n_sites) {
-#     Z_st[l, 1:n_ind[l]] <- 1 ##?
-#   }
-#   return(list(Z_st, psi))
-# }
-
-# needs testing - all z should be 1 or 0 and psi should be a vector of values between 0 and 1 that are based on z and n0.
-
-# replace values with NA for initial values outside the augment for each site. Should be done in the prep data but...
-
-
-
 initsf <- function() {
   psi_st <- runif(1, 0.05, 0.2)
   Z_st <- matrix(NA_integer_, n_sites, max(M))
@@ -189,7 +174,7 @@ initsf <- function() {
     list(s = s_st, 
          z = Z_st, 
          psi = n_ind_site$n / rowSums(Z_st, na.rm = TRUE), 
-         psi_sex = runif(1, 0.3, 0.8))
+         psi_sex = sum(sex*Z_st)/sum(Z_st))
   )
 }
 
