@@ -1,6 +1,7 @@
 ######### Load Libraries #########
 ##
 
+library(parallel)
 library(dplyr)
 library(jagsUI)
 
@@ -15,10 +16,10 @@ if(testing) {
   nc = 20
   nb = 200
 } else {
-  nb = 1000
-  ni = 7000
-  nc = 10
-  nt = 6
+  nb = 2000
+  ni = 8000
+  nc = 8
+  nt = 3
 }
 
 ######### Load Data from Previous script #########
@@ -236,3 +237,7 @@ end_zeros <- Sys.time()
 end_zeros - start_zeros
 
 # stopCluster(cl)
+
+saveRDS(out, file = "Results/JAGS/all_site_reg_final.rds")
+
+

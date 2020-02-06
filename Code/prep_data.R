@@ -9,7 +9,7 @@ library(tidyr)
 library(rgdal)
 library(sp)
 
-testing <- TRUE
+testing <- FALSE
 run_date <- Sys.Date()
 
 # number of possible individuals per site
