@@ -11,6 +11,9 @@ out <- readRDS("Results/JAGS/all_site_reg_final.rds")
 
 samples <- out$samples
 
+# data <- bayesplot:::mcmc_trace_data(samples, regex_pars = c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site"))
+
+
 ######### Check MCMC ########
 
 color_scheme_set("mix-blue-pink")
@@ -50,8 +53,8 @@ p + facet_text(size = 15)
 p <- mcmc_trace(samples, regex_pars = c("mu_psi_site"))
 p + facet_text(size = 15)
 
-p <- mcmc_trace(samples, regex_pars = c("p_cap"))
-p + facet_text(size = 15)
+# p <- mcmc_trace(samples, regex_pars = c("p_cap"))
+# p + facet_text(size = 15)
 
 effectiveSize(samples)
 
