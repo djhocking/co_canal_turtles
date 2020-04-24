@@ -71,7 +71,7 @@ model{
   for(t in 1:2) {
   sigma[t] <- pow(1 / (2 * alpha1[t]), 0.5) # sd of half normal
   # log(alpha1[t]) <- alpha_1_int + alpha_1_sex * (t-1) # affect of being female on home range
-  alpha1[t] ~ dnorm(0, 0.5)T(0.001, 10)
+  alpha1[t] ~ dnorm(1.5, pow(2, -2))T(0.02, ) # prior home range mean = 250m, median = 200m, and sd = 180
     }
     
   for(g in 1:n_sites) {
