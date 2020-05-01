@@ -66,7 +66,7 @@ model{
   beta_2 ~ dnorm(0, pow(10, -2))
   beta_3 ~ dnorm(0, pow(10, -2))
   # alpha_1_int ~ dnorm(0, pow(3, -2))
-  psi_sex ~ dunif(0.1, 0.9)
+  psi_sex ~ dunif(0, 1)
   
   for(t in 1:2) {
   sigma[t] <- pow(1 / (2 * alpha1[t]), 0.5) # sd of half normal
@@ -180,31 +180,9 @@ initsf <- function() {
 
 rowSums(Z_st, na.rm = TRUE)
 
-## not working: needs testing - all z should be 1 or 0 and psi should be a vector of values between 0 and 1 that are based on z and n0.
-# initsf <- function() {
-#   psi_st <- runif(1, 0.05, 0.2)
-#   Z_st <- matrix(rbinom(n_sites * max(M, 1, psi_st)), n_sites, max(M))
-#   for(l in 1:n_sites) {
-#     zoo = matrix(1, 1, n_ind_site$n[l])
-#     Z_st[l, ] = cbind(zoo, matrix(NA, 1, M[l] - n_ind_site$n[l]))
-#   }
-#   
-#   return(
-#   list(s = s_st, 
-#        z = Z_st, 
-#        psi = n_ind_site$n / rowSums(Z_st), 
-#        psi_sex = runif(1, 0.3, 0.8))
-#   )
-# }
-
 parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site") ## "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 start_zeros <- Sys.time()
-# cl <- makeCluster(nc)                       # Request # cores
-# clusterExport(cl, c("scr_zeros", "jags_data_site", "initsf", "parameters", "EM_array", "sex", "trap_locs", "n_days", "M", "xlim", "n_traps_site", "forest_std", "depth_std", "n_sites", "recaptured", "n_ind_site", "Z_st", "s_st", "psi_st", "ni", "nb", "nt", "nc")) # Make these available
-# 
-# clusterSetRNGStream(cl = cl, 54354354)
-
 
 out <- jagsUI(data = jags_data_site, 
               inits = initsf, 
@@ -220,8 +198,6 @@ out <- jagsUI(data = jags_data_site,
 end_zeros <- Sys.time()
 
 end_zeros - start_zeros
-
-# stopCluster(cl)
 
 saveRDS(out, file = "Results/JAGS/all_site_reg_final.rds")
 

@@ -3,14 +3,14 @@ model{
   
   alpha2 ~ dnorm(0, pow(1.5, -2)) # Trap behavior universal distribution across sites
   mu_0 ~ dnorm(0, pow(1.5, -2))
-  sd_0 ~ dunif(0, 3)
+  sd_0 ~ dunif(0, 5)
   # alpha_1_sex ~ dnorm(0, pow(1.5, -2))
   beta_0 ~ dnorm(0, pow(10, -2))
   beta_1 ~ dnorm(0, pow(10, -2))
   beta_2 ~ dnorm(0, pow(10, -2))
   beta_3 ~ dnorm(0, pow(10, -2))
   # alpha_1_int ~ dnorm(0, pow(3, -2))
-  psi_sex ~ dbeta(1, 1)
+  psi_sex ~ dunif(0, 1)
   
   for(t in 1:2) {
   sigma[t] <- pow(1 / (2 * alpha1[t]), 0.5) # sd of half normal
@@ -19,7 +19,7 @@ model{
     }
     
   for(g in 1:n_sites) {
-    psi[g] ~ dbeta(1, 1) # prob of individual being in the population
+    psi[g] ~ dunif(0, 1) # prob of individual being in the population
     
     for(k in 1:K) {
       alpha0[g, k] ~ dnorm(mu_0, sd_0)
