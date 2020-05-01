@@ -8,7 +8,7 @@ library(bayesplot)
 
 ######### Load MCMC Object #########
 
-out <- readRDS("Results/JAGS/all_site_reg_final.rds")
+out <- readRDS("Results/JAGS/all_sites_reg_final.rds")
 
 samples <- out$samples
 
@@ -35,11 +35,14 @@ p + facet_text(size = 15)
 p <- mcmc_trace(samples, regex_pars = c("alpha3"))
 p + facet_text(size = 15)
 
-# p <- mcmc_trace(samples, regex_pars = c("sigma"))
-# p + facet_text(size = 15)
+p <- mcmc_trace(samples, regex_pars = c("sigma"))
+p + facet_text(size = 15)
 
-# p <- mcmc_dens(samples, regex_pars = c("sigma"))
-# p + facet_text(size = 15) + lim(0, 10)
+p <- mcmc_trace(samples, regex_pars = c("alpha1"))
+p + facet_text(size = 15)
+
+p <- mcmc_dens(samples, regex_pars = c("alpha1"))
+p + facet_text(size = 15) #+ lim(0, 10)
 
 p <- mcmc_trace(samples, regex_pars = c("beta"))
 p + facet_text(size = 15)

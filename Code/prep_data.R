@@ -13,12 +13,12 @@ testing <- FALSE
 run_date <- Sys.Date()
 
 # number of possible individuals per site
-M <- 7000 
+M <- 10000 
 if(testing) {
   M <- 125
 }
 
-min_cap_rate <- 0.015
+min_cap_rate <- 0.01
 
 site_index <- read.csv(file = "Data/site_index.csv", header = TRUE, stringsAsFactors = FALSE)
 
