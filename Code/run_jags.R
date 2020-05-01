@@ -68,11 +68,14 @@ model{
   # alpha_1_int ~ dnorm(0, pow(3, -2))
   psi_sex ~ dunif(0.1, 0.9)
   
-  for(t in 1:2) {
-  sigma[t] <- pow(1 / (2 * alpha1[t]), 0.5) # sd of half normal
-  # log(alpha1[t]) <- alpha_1_int + alpha_1_sex * (t-1) # affect of being female on home range
-  alpha1[t] ~ dnorm(1.5, pow(2, -2))T(0.02, ) # prior home range mean = 250m, median = 200m, and sd = 180
-    }
+  sigma ~ dnorm(3, pow(2, -2))T(0, ) # half normal with mean = 1 -> roughly 1 ha home range. Same for both sexes b/c lack of data to fit separately
+  alpha1 <- 1 / (2 * sigma * sigma)
+  
+  # for(t in 1:2) {
+  # sigma[t] <- pow(1 / (2 * alpha1[t]), 0.5) # sd of half normal
+  # # log(alpha1[t]) <- alpha_1_int + alpha_1_sex * (t-1) # affect of being female on home range
+  # alpha1[t] ~ dnorm(1.5, pow(2, -2))T(0.02, ) # prior home range mean = 250m, median = 200m, and sd = 180
+  #   }
     
   for(g in 1:n_sites) {
     psi[g] ~ dunif(0, 1) # prob of individual being in the population
@@ -91,7 +94,7 @@ model{
         d[g,i,j] <- abs(s[g, i] - trap_locs[g, j])
                  
         for(k in 1:K) {
-          p[g, i, j, k] <- p0[g, i, j, k] * exp(-1 * alpha1[Sex2[g, i]] * d[g, i, j] * d[g, i, j])
+          p[g, i, j, k] <- p0[g, i, j, k] * exp(-1 * alpha1 * d[g, i, j] * d[g, i, j]) # alpha1[Sex2[g, i]] 
             } # k
           } # j
         } # i
@@ -114,9 +117,11 @@ model{
       zeros[i, g] ~ dbern(1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i]))
     } # i
     
-    # Derived parameters
+    ##### Derived parameters #####
     N[g] <- sum(z[g , 1:M[g]])
     density[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
+    
+    density_ha[g] <- sum(z[g , 1:M[g]]) / ((xlim[g, 2] - xlim[g, 1]) * 100 * width_m[g]) * 10000 # density per hectare
     
     p_cap_site[g] <- n0[g] / (n0[g] + sum(z[g , (n0[g]+1):M[g]]))
     
@@ -133,6 +138,10 @@ p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
   
   sigma_mean <- mean(sigma[1:2])
   
+  # linear home range
+    home_50 <- 2 * 0.675 * sigma * 100
+    home_95 <- 2 * 1.96 * sigma * 100
+  
 }
 ", file = "Code/JAGS/zero_test.txt")
 
@@ -143,7 +152,7 @@ width <- read.csv(file = "Data/LandUse/Width_Spatial.csv", header = TRUE)
 
 forest_std <- as.numeric(scale(forest))
 depth_std <- as.numeric(scale(depth))
-width_std <- as.numeric(scale(width))
+width_std <- as.numeric(scale(width$width))
 
 jags_data_site <- list(y = EM_array, 
                        Sex = sex, 
@@ -155,6 +164,7 @@ jags_data_site <- list(y = EM_array,
                        forest = forest_std,
                        depth = depth_std,
                        width = width_std,
+                       width_m = as.numeric(width$width),
                        site_zeros = rep(0, n_sites),
                        C = recaptured, 
                        zeros = zeros,
@@ -197,7 +207,7 @@ rowSums(Z_st, na.rm = TRUE)
 #   )
 # }
 
-parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site") ## "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
+parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "beta_3", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") ## "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 start_zeros <- Sys.time()
 # cl <- makeCluster(nc)                       # Request # cores
