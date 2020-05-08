@@ -63,6 +63,10 @@ p + facet_text(size = 15)
 p <- mcmc_trace(samples, regex_pars = c("alpha1"))
 p + facet_text(size = 15)
 
+
+p <- mcmc_trace(samples, regex_pars = c("alpha2"))
+p + facet_text(size = 15)
+
 p <- mcmc_dens(samples, regex_pars = c("alpha1"))
 p + facet_text(size = 15) #+ lim(0, 10)
 
