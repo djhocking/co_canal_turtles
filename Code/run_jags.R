@@ -228,6 +228,6 @@ end_zeros <- Sys.time()
 
 end_zeros - start_zeros
 
-saveRDS(out, file = paste0("Results/JAGS/all_site_reg_", run_date, ".rds"))
+saveRDS(out, file = paste0("Results/JAGS/all_sites_reg_", run_date, ".rds"))
 
 
