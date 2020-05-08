@@ -21,3 +21,8 @@ plot(density(home_range), xlim = c(0, 1000)) # prior on home range
 
 
 # if typical home range size from literature is ~2 ha, then in a 20 m width section of the canal, linear home range would be 1000 m (seems large). But less than 100m moved per day, so we wouldn't expect more than 400 m for ours?
+
+pnorm(1, 0, 1)
+dnorm(1, 0, 1)
+qnorm(c(0.25, 0.75), 0, 1)
+qnorm(c(0.025, 0.975), 0, 1)

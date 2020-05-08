@@ -1,14 +1,16 @@
 ########## Load Libraries ##########
 library(coda)
 library(rjags)
-library(nimble)
+# library(nimble)
 # library(devtools)
 # install_github("https://github.com/stan-dev/bayesplot" # if want latest development version of bayesplot)
 library(bayesplot)
+library(dplyr)
+# library(tibble)
 
 ######### Load MCMC Object #########
 
-out <- readRDS("Results/JAGS/all_sites_reg_final.rds")
+out <- readRDS("Results/JAGS/all_sites_reg_2020-05-01.rds")
 
 samples <- out$samples
 
@@ -38,6 +40,26 @@ p + facet_text(size = 15)
 p <- mcmc_trace(samples, regex_pars = c("sigma"))
 p + facet_text(size = 15)
 
+# 50% kernal density home range (+/- 0.68 SD)
+
+# mat <- t(as.matrix(samples))
+# df <- data.frame(mat, stringsAsFactors = FALSE)
+# names(df) <- dimnames(mat)[[1]]
+# df <- df %>%
+#   # dplyr::select(sigma) %>%
+#   dplyr::mutate(hr50 = 2 * sigma * 0.68,
+#          hr95 = 2 * sigma * 2)
+
+# ggplot(data = df, aes(hr50)) + geom_histogram()
+# p <- mcmc_dens(samples, regex_pars = c("home_50")) # + panel_cols(color = "gray20", fill = "gray30")
+# p + facet_text(size = 15)
+
+p <- mcmc_dens(samples, regex_pars = c("home_"))
+p + facet_text(size = 15)
+
+p <- mcmc_dens_chains(samples, regex_pars = c("home_"))
+p + facet_text(size = 15)
+
 p <- mcmc_trace(samples, regex_pars = c("alpha1"))
 p + facet_text(size = 15)
 
@@ -53,14 +75,20 @@ p + facet_text(size = 15)
 p <- mcmc_trace(samples, regex_pars = c("density"))
 p + facet_text(size = 15)
 
+p <- mcmc_trace(samples, regex_pars = c("density_ha"))
+p + facet_text(size = 15)
+
 p <- mcmc_trace(samples, regex_pars = c("N"))
 p + facet_text(size = 15)
 
 # p <- mcmc_trace(samples, regex_pars = c("mu_psi_site"))
 # p + facet_text(size = 15)
 
-# p <- mcmc_trace(samples, regex_pars = c("p_cap"))
-# p + facet_text(size = 15)
+p <- mcmc_trace(samples, regex_pars = c("p_cap_site"))
+p + facet_text(size = 15)
+
+p <- mcmc_trace(samples, regex_pars = c("p_cap_day"))
+p + facet_text(size = 15)
 
 effectiveSize(samples)
 
@@ -79,8 +107,9 @@ gelman.diag(samples[ , c("density[1]", "density[2]", "density[3]", "density[4]",
 # p + facet_text(size = 15)
 
 library(rstan)
+nc <- 8
 sample_array <- as.array(samples)
-sample_array <- aperm(sample_array, c(1, nc, 2))
+sample_array <- aperm(sample_array, c(1, 3, 2))
 mon <- rstan::monitor(sample_array, warmup = 0)
 rstan:::print.simsummary(mon)
 max(mon$Rhat)
