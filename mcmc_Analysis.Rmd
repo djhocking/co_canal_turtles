@@ -1,0 +1,331 @@
+---
+title: "SCR_MCMC_Analysis"
+author: "Haydt"
+date: "9/26/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, echo = FALSE}
+
+library(ggplot2)
+library(tidybayes)
+library(bayesplot)
+library(coda)
+library(rjags)
+library(RColorBrewer)
+library(cowplot)
+library(MCMCvis)
+#library(Hmsc)
+
+```
+
+```{r load rds}
+
+test_mcmc <- readRDS(file = "/Users/nataliehaydt/Desktop/Analysis/all_site_reg_test.rds")
+samples <- readRDS("/Users/nataliehaydt/Desktop/Analysis/all_site_reg.rds")
+
+```
+
+```{r trace plots}
+# each mcmc file includes a list of 4 objects - from each of 4 chains
+# effective sampling size and gelman diagnostic (chain convergence; PSRF)
+# add in parameters from final model
+par(mar=c(1,1,1,1))
+
+color_scheme_set("viridis")
+p <- mcmc_trace(samples, regex_pars = c("mu"))
+p + facet_text(size = 15)
+
+p <- mcmc_trace(samples, regex_pars = c("alpha1"))
+p + facet_text(size = 15)
+
+p <- mcmc_trace(samples, regex_pars = c("alpha2"))
+p + facet_text(size = 15)
+
+p <- mcmc_trace(samples, regex_pars = c("sigma"))
+p + facet_text(size = 15)
+
+p <- mcmc_trace(samples, regex_pars = c("beta"))
+p + facet_text(size = 15)
+
+p <- mcmc_trace(samples, regex_pars = c("sd"))
+p + facet_text(size = 15)
+
+p <- mcmc_trace(samples, regex_pars = c("density"))
+p + facet_text(size = 15)
+
+# Detection intercept 
+p <- mcmc_trace(samples, regex_pars = c("alpha0"))
+p + facet_text(size = 15)
+
+# p <- mcmc_trace(samples, regex_pars = c("alpha3"))
+# p + facet_text(size = 15)
+
+# p <- mcmc_trace(samples, regex_pars = c("N"))
+# p + facet_text(size = 15)
+
+# p <- mcmc_trace(samples, regex_pars = c("p_cap"))
+# p + facet_text(size = 15)
+
+```
+
+```{r gelman}
+
+# Want gelman diagnostic to become very close to 1
+coda::gelman.plot(samples)
+# Can see vars converge well, except sigma and sd of a0
+
+```
+
+
+```{r rhat?}
+
+##
+
+
+```
+
+```{r effective sample sizes}
+
+# ratios_samples <- neff_ratio(samples) ## must be stanfil or stanreg object
+ess <- effectiveSize(samples) # from package coda
+print(ess)
+hist(ess, breaks = 50)
+
+ess_test <- effectiveSize(test_mcmc)
+print(ess_test)
+hist(ess_test, breaks = 50)
+
+ratio <- ess/(2500*4) # how to find the number of samples? Each chain 2500 (samples) X 79 (params)?
+# Need to multiply by chains?
+test_ratio <- ess_test/(1000*4)
+
+mcmc_neff(ratio, size = 2)
+mcmc_neff(test_ratio, size = 2)
+# y axis are the various estimated parameters
+
+
+
+```
+
+```{r density plots}
+#create various graphical displays comparing the observed data y to the replications.
+#can you do this with density?
+
+p <- mcmc_hist(samples, regex_pars = c("density"))
+p + facet_text(size = 15)
+
+p <- mcmc_hist(samples, regex_pars = c("mu"))
+p + facet_text(size = 15)
+
+p <- mcmc_hist(samples, regex_pars = c("alpha1"))
+p + facet_text(size = 15)
+
+p <- mcmc_hist(samples, regex_pars = c("alpha2"))
+p + facet_text(size = 15)
+
+p <- mcmc_hist(samples, regex_pars = c("sigma"))
+p + facet_text(size = 15)
+
+p <- mcmc_hist(samples, regex_pars = c("beta"))  #!!!!!
+p + facet_text(size = 15)
+
+p <- mcmc_hist(samples, regex_pars = c("sd"))  #??
+p + facet_text(size = 15)
+
+p <- mcmc_hist(samples, regex_pars = c("alpha0"))
+p + facet_text(size = 15)
+
+# p <- mcmc_hist(samples, regex_pars = c("alpha3"))
+# p + facet_text(size = 15)
+
+# p <- mcmc_hist(samples, regex_pars = c("N"))
+# p + facet_text(size = 15)
+
+# p <- mcmc_hist(samples, regex_pars = c("p-cap"))
+# p + facet_text(size = 15)
+
+
+```
+
+```{r density by chains}
+
+color_scheme_set("viridis")
+p <- mcmc_dens_overlay(samples, regex_pars = c("density"))
+p + facet_text(size = 15)
+
+# p <- mcmc_dens(samples, regex_pars = c("density"))
+# p + facet_text(size = 15)
+
+p <- mcmc_dens_overlay(samples, regex_pars = c("mu"))
+p + facet_text(size = 15)
+
+p <- mcmc_dens_overlay(samples, regex_pars = c("alpha1"))
+p + facet_text(size = 15)
+
+p <- mcmc_dens_overlay(samples, regex_pars = c("alpha2"))
+p + facet_text(size = 15)
+
+p <- mcmc_dens_overlay(samples, regex_pars = c("sigma"))
+p + facet_text(size = 15)
+
+p <- mcmc_dens_overlay(samples, regex_pars = c("beta"))
+p + facet_text(size = 15)
+
+p <- mcmc_dens_overlay(samples, regex_pars = c("sd"))
+p + facet_text(size = 15)
+
+# Detection intercept 
+p <- mcmc_dens_overlay(samples, regex_pars = c("alpha0"))
+p + facet_text(size = 15)
+
+# p <- mcmc_dens_overlay(samples, regex_pars = c("alpha3"))
+# p + facet_text(size = 15)
+
+# p <- mcmc_dens_overlay(samples, regex_pars = c("N"))
+# p + facet_text(size = 15)
+
+# p <- mcmc_dens_overlay(samples, regex_pars = c("p_cap"))
+# p + facet_text(size = 15)
+
+```
+
+```{r violin}
+
+color_scheme_set("teal")
+p <- mcmc_violin(samples, regex_pars = c("density"), probs = c(0.1, 0.5, 0.9))
+p + facet_text(size = 15)
+
+```
+
+```{r geom eye}
+# tidybayes
+# p <- geom_eye(samples, regex_pars = c("density"))
+# p + facet_text(size = 15)
+
+
+```
+
+```{r scatters}
+
+# color_scheme_set("gray")
+# mcmc_scatter(samples, pars = c("beta1", "density"), 
+#              size = 1.5, alpha = 0.5)
+
+```
+
+```{r colors}
+
+color_scheme_set("viridisC") ##
+p1 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("viridisD") ##
+p2 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("mix-purple-yellow")
+p3 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("mix-red-teal")
+p4 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("brewer-Accent")
+p5 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("brewer-Spectral")
+p6 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("brewer-Dark2")
+p7 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("brewer-Paired")
+p8 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("brewer-Set1")
+p9 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("brewer-Set2")
+p10 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("brewer-PRGn")
+p11 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+color_scheme_set("brewer-BrBG")
+p12 <- mcmc_dens_overlay(samples, pars = c("density[1]"))
+
+plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12,
+          ncol = 4, nrow = 3)
+
+```
+
+```{r check posterior against inits}
+
+
+
+```
+
+```{r pairs}
+
+# > p <- mcmc_pairs(samples, pars = c("density[1]", "density[2]", "density[3]", "density[4]", "density[5]", "density[6]", "beta1", "beta2"))
+# > p
+# Error in UseMethod("depth") : 
+#   no applicable method for 'depth' applied to an object of class "NULL"
+
+p <- mcmc_parcoord(samples, pars = c("density[1]", "beta1"))
+p
+# what is this showing?
+
+```
+
+```{r scatters}
+
+p <- mcmc_scatter(samples, pars = c())
+p
+
+```
+
+```{r mean and CIs for important parameters}
+
+## viewing median, 0.5, and 0.9 CIs here, can change to see mean instead
+mcmc_intervals(samples, regex_pars = c("density"), )
+mcmc_areas(samples, regex_pars = c("density"), area_method = "scaled height")
+mcmc_areas_ridges(samples, regex_pars = c("density"))
+#mcmc_intervals_data(samples, regex_pars = c("density"))
+#### REALLY COOL LOOKING GRAPHS!!!!
+
+# other paramaters
+
+```
+
+```{r MCMCvis package}
+#### HOLY CRAP THIS IS GREAT!!!!
+
+MCMC2000_summary <- MCMCsummary(samples, round = 2)
+MCMC2000_density <- MCMCsummary(samples, round = 2,
+            params = 'density')
+MCMCsummary(samples, round = 2,
+            params = c('alpha0', 'mu_a0', 'sd_a0'))
+MCMCsummary(samples, round = 2,
+            params = c('alpha1', 'mu_a1'))
+MCMCsummary(samples, round = 2,
+            params = c('alpha2', 'beta1', 'beta2'))
+MCMC2000_sigma <- MCMCsummary(samples, round = 2,
+            params = 'sigma')
+
+# add in other params!!
+
+```
+
+```{r}
+
+# plot 
+#alpha0 per site
+#alpha1 per site and sex
+#density per site
+#sigma per site and sex
+# other params added for summary stats
+
+```
