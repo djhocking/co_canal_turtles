@@ -19,15 +19,16 @@ library(rjags)
 library(RColorBrewer)
 library(cowplot)
 library(MCMCvis)
+library(rstan)
 #library(Hmsc)
 
 ```
 
 ```{r load rds}
 
-test_mcmc <- readRDS(file = "/Users/nataliehaydt/Desktop/Analysis/all_site_reg_test.rds")
-samples <- readRDS("/Users/nataliehaydt/Desktop/Analysis/all_site_reg.rds")
-
+# test_mcmc <- readRDS(file = "Results/JAGS/all_site_reg_test.rds")
+jagsfit <- readRDS("Results/JAGS/all_sites_reg_2020-05-01.rds")
+samples <- jagsfit$samples
 ```
 
 ```{r trace plots}
@@ -58,6 +59,9 @@ p + facet_text(size = 15)
 p <- mcmc_trace(samples, regex_pars = c("density"))
 p + facet_text(size = 15)
 
+p <- mcmc_trace(samples, regex_pars = c("density_ha"))
+p + facet_text(size = 15)
+
 # Detection intercept 
 p <- mcmc_trace(samples, regex_pars = c("alpha0"))
 p + facet_text(size = 15)
@@ -75,21 +79,30 @@ p + facet_text(size = 15)
 
 ```{r gelman}
 
-# Want gelman diagnostic to become very close to 1
-coda::gelman.plot(samples)
+# Want gelman diagnostic to become very close to 1 (less than 1.05)
+# coda::gelman.plot(samples)
 # Can see vars converge well, except sigma and sd of a0
 
 ```
 
 
-```{r rhat?}
-
+```{r rhat}
 ##
-
-
+sample_array <- as.array(samples)
+sample_array <- aperm(sample_array, c(1, 3, 2))
+mon <- rstan::monitor(sample_array, warmup = 0) # prints by default
+# rstan:::print.simsummary(mon)
+max(mon$Rhat)
+min(mon$Bulk_ESS)
+min(mon$Tail_ESS)
+# summary(mon$Bulk_ESS)
+# summary(mon$Tail_ESS)
 ```
 
-```{r effective sample sizes}
+```{r effective sample sizes, eval = FALSE}
+
+# Ventari et al. 2020 have improved methods of calculating ESS and R-hat - improvement on what's used in coda. It's implemented in rstan and it's what I added above.
+# https://arxiv.org/abs/1903.08008
 
 # ratios_samples <- neff_ratio(samples) ## must be stanfil or stanreg object
 ess <- effectiveSize(samples) # from package coda
@@ -111,6 +124,7 @@ mcmc_neff(test_ratio, size = 2)
 
 
 ```
+
 
 ```{r density plots}
 #create various graphical displays comparing the observed data y to the replications.
@@ -197,7 +211,7 @@ p + facet_text(size = 15)
 ```{r violin}
 
 color_scheme_set("teal")
-p <- mcmc_violin(samples, regex_pars = c("density"), probs = c(0.1, 0.5, 0.9))
+p <- mcmc_violin(samples, regex_pars = c("density_ha"), probs = c(0.1, 0.5, 0.9))
 p + facet_text(size = 15)
 
 ```
@@ -274,7 +288,7 @@ plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12,
 # Error in UseMethod("depth") : 
 #   no applicable method for 'depth' applied to an object of class "NULL"
 
-p <- mcmc_parcoord(samples, pars = c("density[1]", "beta1"))
+p <- mcmc_parcoord(samples, pars = c("density_ha[1]", "beta1"))
 p
 # what is this showing?
 
@@ -290,9 +304,9 @@ p
 ```{r mean and CIs for important parameters}
 
 ## viewing median, 0.5, and 0.9 CIs here, can change to see mean instead
-mcmc_intervals(samples, regex_pars = c("density"), )
-mcmc_areas(samples, regex_pars = c("density"), area_method = "scaled height")
-mcmc_areas_ridges(samples, regex_pars = c("density"))
+mcmc_intervals(samples, regex_pars = c("density_ha"), )
+mcmc_areas(samples, regex_pars = c("density_ha"), area_method = "scaled height")
+mcmc_areas_ridges(samples, regex_pars = c("density_ha"))
 #mcmc_intervals_data(samples, regex_pars = c("density"))
 #### REALLY COOL LOOKING GRAPHS!!!!
 
@@ -303,7 +317,7 @@ mcmc_areas_ridges(samples, regex_pars = c("density"))
 ```{r MCMCvis package}
 #### HOLY CRAP THIS IS GREAT!!!!
 
-MCMC2000_summary <- MCMCsummary(samples, round = 2)
+MCMC2000_summary <- MCMCsummary(samples, round = 2) # not sure what they use for rhat or ess in this but prob better to use mon from above for those. The credible intervals should be fine though.
 MCMC2000_density <- MCMCsummary(samples, round = 2,
             params = 'density')
 MCMCsummary(samples, round = 2,
