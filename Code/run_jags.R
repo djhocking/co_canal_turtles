@@ -7,13 +7,13 @@ library(jagsUI)
 
 ######### Load Data from Previous script #########
 
-testing <- TRUE
+testing <- FALSE
 run_date <- Sys.Date()
 
 if(testing) {
   ni = 300
   nt = 1
-  nc = 3
+  nc = 20
   nb = 200
 } else {
   nb = 2000
@@ -23,11 +23,11 @@ if(testing) {
 }
 
 ######### Load Data from Previous script #########
-Species <- c("CPIC", "PRUB", "CSER", "SODO")[2] 
+
 if(testing) {
-  load(file = paste0("Data/Derived/", Species, "/all_site_testing_", run_date, ".RData"))
+  load(file = paste0("Data/Derived/all_site_testing_", run_date, ".RData"))
 } else {
-  load(file = "Data/Derived/", Species, "/all_site.RData")
+  load(file = "Data/Derived/all_site.RData")
 }
 
 # make M variable by site to speed code
