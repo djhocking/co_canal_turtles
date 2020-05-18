@@ -6,40 +6,38 @@
 #### Adding in Variation in N per site ####
 library(dplyr)
 library(tidyr)
-library(rjags)
-library(parallel)
-library(zoo)
 library(rgdal)
 library(sp)
-library(utils)
-# library(reshape)
-# library(plyr)
 
 testing <- TRUE
 run_date <- Sys.Date()
 
-n_traps <- 14
-
 # number of possible individuals per site
-
-M <- 1500
-
+M <- 500  
 if(testing) {
   M <- 100
 }
 
-Sites <- read.csv(file = "Data/trapids_sites.csv", header = TRUE)
+min_cap_rate <- 0.01
 
-max_trap_csv <- read.csv(file = "Data/Max_Traps_Site.csv")
-max_trap <- max_trap_csv$max_traps
+site_index <- read.csv(file = "Data/site_index.csv", header = TRUE, stringsAsFactors = FALSE)
 
-coords <- read.csv(file = "Data/coords.csv")
-str(coords)
-summary(coords)
+sites <- read.csv(file = "Data/trapids_sites.csv", header = TRUE, stringsAsFactors = FALSE)
+sites <- left_join(sites, site_index, by = "site")
+coords <- read.csv(file = "Data/coords.csv", stringsAsFactors = FALSE)
+EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
+EDF <- left_join(EDF, site_index, by = "site")
+n_traps_site <- read.csv(file = "Data/Max_Traps_Site.csv", stringsAsFactors = FALSE) # number of traps per site
+n_traps_site <- left_join(n_traps_site, site_index, by = "site")
+n_traps_site <- n_traps_site[order(n_traps_site$site_num), ]
+n_traps <- n_traps_site$max_traps
+# K <- max(EDF$day)
+n_days <- max(EDF$day)
 
+########## Process Trap Locations ###########
 trap_locs_degrees <- coords
 trap_locs_degrees$trap <- 1:nrow(trap_locs_degrees)
-trap_num <- trap_locs_degrees$trap ## Change?? 122 right now
+trap_num <- trap_locs_degrees$trap
 
 
 # convert to utm to have distance in meters
@@ -53,360 +51,291 @@ colnames(trap_locs) = c("trap_id", "easting", "northing")
 # trap_locs as single vector with distance between
 
 ## Creating trap location vector per site using coordinates (sp package required)
-trap_dist_A <- spDistsN1(coords_utm[1:8, ], coords_utm[1, ])
-trap_dist_C <- spDistsN1(coords_utm[9:18, ], coords_utm[9, ])
-trap_dist_D <- spDistsN1(coords_utm[19:26, ], coords_utm[19, ])
-trap_dist_E <- spDistsN1(coords_utm[27:40, ], coords_utm[27, ])
-trap_dist_F <- spDistsN1(coords_utm[41:47, ], coords_utm[41, ])
-trap_dist_G <- spDistsN1(coords_utm[48:54, ], coords_utm[48, ])
-trap_dist_J <- spDistsN1(coords_utm[61:70, ], coords_utm[61, ])
-trap_dist_K <- spDistsN1(coords_utm[71:80, ], coords_utm[71, ])
-trap_dist_L <- spDistsN1(coords_utm[81:90, ], coords_utm[81, ])
-trap_dist_M <- spDistsN1(coords_utm[91:102, ], coords_utm[91, ])
-trap_dist_N <- spDistsN1(coords_utm[103:112, ], coords_utm[103, ])
-trap_dist_O <- spDistsN1(coords_utm[113:122, ], coords_utm[113, ])
+# order of sites - (2,4,6,7,1,9,8,3,5,10,11,12)
+trap_dist_2 <- spDistsN1(coords_utm[1:8, ], coords_utm[1, ])
+trap_dist_4 <- spDistsN1(coords_utm[9:18, ], coords_utm[9, ])
+trap_dist_6 <- spDistsN1(coords_utm[19:26, ], coords_utm[19, ])
+trap_dist_7 <- spDistsN1(coords_utm[27:40, ], coords_utm[27, ])
+trap_dist_1 <- spDistsN1(coords_utm[41:47, ], coords_utm[41, ])
+trap_dist_9 <- spDistsN1(coords_utm[48:54, ], coords_utm[48, ])
+trap_dist_8 <- spDistsN1(coords_utm[61:70, ], coords_utm[61, ])
+trap_dist_3 <- spDistsN1(coords_utm[71:80, ], coords_utm[71, ])
+trap_dist_5 <- spDistsN1(coords_utm[81:90, ], coords_utm[81, ])
+trap_dist_10 <- spDistsN1(coords_utm[91:102, ], coords_utm[91, ])
+trap_dist_11 <- spDistsN1(coords_utm[103:112, ], coords_utm[103, ])
+trap_dist_12 <- spDistsN1(coords_utm[113:122, ], coords_utm[113, ])
 
-trap_dist_list <- list(trap_dist_A, trap_dist_C, trap_dist_D, trap_dist_E,
-                       trap_dist_F, trap_dist_G, trap_dist_J, trap_dist_K,
-                       trap_dist_L, trap_dist_M, trap_dist_N, trap_dist_O)
-# trap_locs <- trap_dist_list
+trap_dist_list <- list(trap_dist_1, trap_dist_2, trap_dist_3, trap_dist_4,
+                       trap_dist_5, trap_dist_6, trap_dist_7, trap_dist_8,
+                       trap_dist_9, trap_dist_10, trap_dist_11, trap_dist_12)
 
-trap_locs <- matrix(NA, 12, max(max_trap))
+trap_locs <- matrix(NA, 12, max(n_traps_site$max_traps))
 for (i in 1:12) {
-trap_locs[i, 1:max_trap[i]] <- trap_dist_list[[i]] / 100
+  trap_locs[i, 1:n_traps_site$max_traps[i]] <- trap_dist_list[[i]] / 100
 }
-
-
 
 xlim <- matrix(NA, 12, 2)
 for(i in 1:12){
-  xlim[i, 1:2] <- c(min(trap_dist_list[[i]]) - 150, max(trap_dist_list[[i]]) + 150) / 100 # need to have buffer on each side without being negative. Just added 50 to the end for testing but will have to think through
+  xlim[i, 1:2] <- c(min(trap_dist_list[[i]]) - 1000, max(trap_dist_list[[i]]) + 1000) / 100 # need to have buffer on each side without being negative. 
 }
-
 
 ####### EDF FILE ########
 
-EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
-head(EDF)
-summary(EDF)
+# only a small number of CPIC were not sexed (~1%). They technically could be used but it would be really difficult with NIMBLE and the two other zero tricks and site looks that are already being applied. For this analysis, we will exclude those individuals from the data. Same with NA of which there are only two (SODO).
 
-#Take out sites H and I
+# filter(EDF, is.na(sex))
+# filter(EDF, sex == "U")
 
-EDF_PRUB <- EDF %>%
-  filter(site != "H" & site != "I" & species == "PRUB")
-EDF_PRUB
+# only do analysis for Males and Females. Skip for unrecorded and juvenile because insufficient data for calculating separate home range sizes and such for juveniles.
+EDF <- EDF %>%
+  filter(sex != "U",
+         !is.na(sex))
 
-## subtract 6 from trap ids > = 61 (Sites H and I)
+#Take out sites H and I and get data only for 1 species
+Species <- c("CPIC", "PRUB", "CSER", "SODO")[2] # change index depending on species
+EDF_Sp <- EDF %>%
+  filter(site != "H" & site != "I" & species == Species)
+# EDF_Sp
 
-#Add a new column for integer session values (session = site)
-
-EDF_PRUB$trap_id_edited <- ifelse(EDF_PRUB$trap_id >= 61, EDF_PRUB$trap_id - 6, EDF_PRUB$trap_id - 0)
-EDF_PRUB$site_num <- as.integer(as.factor(EDF_PRUB$site))
-
-summary(EDF_PRUB)
-
-
-####### WORK ON THIS SECTION NEXT 3_11_19 ########
-
-# traplocsA <- traplocsA / 100
-# matrixA <- matrixA / 100 # scale for computational purposes
-# 
-n_traps_site <- read.csv(file = "Data/Max_Traps_Site.csv") # number of traps per site
-n_traps <- n_traps_site$max_traps
-
-########
-
-#N <- nrow(EDF_PRUB[which(EDF_PRUB$recap == "N"), ])
-
-N_persite <- list()
-N <- list()
-for(i in 1:12) {
-  N_persite[[i]] <- nrow(EDF_PRUB[which(EDF_PRUB$recap == "N" & EDF_PRUB$site_num == i), ])
-  N[[i]] <- N_persite[[i]]
-}
-n_ind <- N
-n_ind_total <- nrow(EDF_PRUB[which(EDF_PRUB$recap == "N"), ])
-do.call(sum, N)
-K <- max(EDF_PRUB$day) # trap nights per session
-# buffer <- 1 # check literature to make sure doesn't need to be larger
-
-##n_ind <- length(unique(EDF_PRUB$ind)) ## Needs to match up with N? 3 off...
-## should't use unique as does not count those that were b/w sites; why counting? Codes are different...
-
-traps_per_site <- read.csv(file = "Data/trapids_sites.csv")
-
-
-# Make encounter histories with number of times each individual is captured in each trap
 ##### Want EM ARRAY with ijk with index for site ########
 
-########
 
-str(EDF)
-EDF_PRUB
-
-EM_PRUB <- EDF_PRUB %>%
-  group_by(site_num, ind, trap_id_edited, day) %>%
-  select(site_num, ind, trap_id_edited, day) %>%
+EM <- EDF_Sp %>%
+  group_by(site_num, ind, trap, day, sex) %>%
+  select(site_num, ind, trap, day, sex) %>%
   mutate(count = 1) %>%
-  summarise_all(sum) %>%
-  #spread(trap_id_edited, count, fill = 0) %>%
+  summarise(count = sum(count)) %>%  ##?
   ungroup() %>%
-  mutate(id = as.integer(as.factor(ind)))
-
-EM_PRUB$site_trap <- ave(EM_PRUB$trap_id_edited, EM_PRUB$site_num, FUN = function(x) as.numeric(factor(x)))
-
-
-site_trap_combos <- expand.grid(site_num = 1:12, site_trap = 1:14) %>%
-  arrange(site_num, site_trap) # ... need to add in extra traps per site, need to go through and label trap ids with 14 trap "gap" per site
-
-
-foo <- site_trap_combos  %>%
-   left_join(EM_PRUB)
-
-foo <- foo %>%
-left_join(select(max_trap_csv, -site)) %>%
-  # mutate(count = ifelse(site_trap > max_trap, NA_integer_, count)) %>%
-  mutate(count = ifelse(site_trap <= .$max_traps & is.na(count), 0, count))
-
-#add in augments
-
-foo_spread <- foo %>%
-spread(site_trap, count, fill = 0)
-
-full_df <- tidyr::expand(foo_spread, id, day, site_num)
-full_df <- na.omit(full_df)
-
-EM <- left_join(full_df, foo_spread)
+  group_by(site_num) %>%
+  mutate(id_site = as.integer(as.factor(ind))) %>%
+  ungroup() %>%
+  full_join(n_traps_site) %>%
+  select(-c(site, max_traps)) %>%
+  # mutate(count = ifelse(is.na(count), 0, count)) %>%
+  mutate(day = ifelse(is.na(day), 1, day)) %>%
+  mutate(id_site = ifelse(is.na(id_site), 1, id_site)) %>%
+  mutate(trap = ifelse(is.na(trap), 13, trap)) %>%
+  mutate(trap = ifelse(trap == 13 & site_num == 5, 14, trap)) %>%
+  mutate(trap = ifelse(trap == 13 & site_num == 6, 11, trap)) ## change
 
 
-EM <- as.data.frame(EM, stringsAsFactors = FALSE)
-EM <- na.omit(EM)
-EM <- as.data.frame(EM, stringsAsFactors = FALSE)
+# get number of unique individuals caught per site, with spatially relevant site IDs
 
-############
+# y[i,j,k,l] individual x trap x occassion x site
+# to be the same size for an array will need to augment at least up to that while building array. Maybe could use nimbleList(). Not sure it's worth it since augmenting anyway and not sure how to use within BUGS code.
 
-#n_traps <- 14
-J <- n_traps
-num_sites <- max(EDF_PRUB$site_num)
-G <- num_sites
+# Find number of animals per site
+# filter by site
+# filter by day
+# individuals x trap - expand combos, max number of individuals per site
+# spread
+# fill into array (loop by site and day)
 
-###########
+n_sites <- length(sites$site_num)
+site_num_all <- as.data.frame(sites$site_num)
+colnames(site_num_all) <- "site_num"
 
-###############
-#19_4_19
+n_ind_site <- EM %>%
+  group_by(site_num) %>%
+  select(site_num, id_site) %>%
+  distinct() %>%
+  summarise(n = max(id_site)) %>%
+  full_join(site_num_all) %>%
+  mutate(n = ifelse(is.na(n), 0, n)) # unnecessary now...
 
-EM_array <- array(NA, dim = c(M, (max(max_trap) + 1), K, G))
+# n_sites <- length(unique(n_ind_site$site_num))
+n_sites <- 12
+n_days <- 4
 
-# make 4D array: individual (M) x trap (n_traps) x day (K) x site (G)
-# split by day
-for(k in 1:K) {
-  for(g in 1:G) {
-  foo <- EM[(which(EM[]$day == k & EM$site_num == g)), ]
-  foo_less <- select(foo, -c(site_num, ind, day, trap_id_edited, max_traps))
-  df_aug <- as.data.frame(matrix(0, nrow = (M - nrow(foo_less)), ncol = (max(max_trap) + 1)), stringsAsFactors = FALSE)
-  # df_aug$site_num <- g
-  # df_aug <- df_aug[ , c(ncol(df_aug), 1:(ncol(df_aug)-1))]
-  colnames(df_aug) <- colnames(foo_less)
-  foo_augment <- bind_rows(foo_less, df_aug)
-  foo_augment$id <- ifelse(foo_augment$id == 0, NA, foo_augment$id)
-  EM_array[ , , k, g] <- as.matrix(foo_augment)
+# assume capture rate of min_cap_rate (~0.03) to get max individuals to augment (M[g])
+df_M <- n_ind_site %>%
+  mutate(M = n / min_cap_rate + 10)
+df_M
+
+
+EM_expanded <- EM %>%
+  expand(nesting(site_num, ind), trap, day) %>%
+  left_join(EM) %>%
+  select(-sex) %>%
+  ungroup() %>%
+  group_by(site_num) %>%
+  mutate(id_site = as.integer(as.factor(ind))) %>%
+  ungroup() %>%
+  #mutate(site_num = as.integer(as.factor(site))) %>%
+  left_join(n_traps_site) %>%
+  select(-site) %>%
+  mutate(count = if_else(is.na(count) & trap <= max_traps, 0, count)) # %>%
+
+# expected sizes for each individual at each site x trap x day
+n_ind_site$n * 14 * 4
+sum(n_ind_site$n * 14 * 4)
+sum(n_ind_site$n * 14 * 4) == nrow(EM_expanded) # FALSE FOR Species not at each site
+
+summary(EM_expanded)
+
+em_wide <- EM_expanded %>%
+  arrange(trap, site_num, id_site, day) %>%
+  pivot_wider(names_from = trap, values_from = count, names_prefix = "trap_")
+
+# expected sizes for each individual at each site x day
+sum(n_ind_site$n * 4) == nrow(em_wide)
+summary(em_wide)
+
+# Separate individual characteristics to use if wanted
+ind_covs <- EDF %>%
+  group_by(site_num, site, ind, species, sex) %>%
+  select(site_num, site, ind, sex, species, carapace, mass, trap) %>%
+  summarise(carapace = mean(carapace),
+            mass = mean(mass),
+            n_measurements = n(),
+            mean_trap = mean(trap))
+
+
+ind_covs_sp <- ind_covs %>%
+  filter(species == Species,
+         !(site %in% c("H", "I")))
+
+# Don't need to augment the data if using the zeros trick. They don't contribute to the likelihood - but to be in an array they need to be the same size so expand (augment) to the largest number of turtles caught at any site (to avoid using nesting)
+EM_array <- array(NA, dim = c(max(n_ind_site$n), max(n_traps), n_days, n_sites))
+for(l in 1:n_sites) {
+  for(k in 1:n_days) {
+    tmp <- em_wide %>%
+      filter(site_num == l,
+             day == k) %>%
+      dplyr::select(starts_with("trap"))
+    EM_array[1:nrow(tmp), , k, l] <- as.matrix(tmp)
   }
 }
 
-foob <- EM_array[ , -1, , ]
-
-target <- c(1:M)
-
-  for (k in 1:K) {
-    for (g in 1:G) {
-    food <- EM_array[ , , k, g]
-    foob_arranged <- food[match(target, food[ ,1]), ]
-    foob_arranged[is.na(foob_arranged)] <- 0
-    foob_arranged[ , 1] <- ifelse(foob_arranged[ , 1] == 0, NA, foob_arranged[ ,1])
-    foob_arranged <- foob_arranged[ , -1]
-    #foob_arranged <- select()
-    #foob_arranged <- food[order(food[ , 1]), ]
-    foob[ , , k, g] <- as.matrix(foob_arranged)
-    }
-  }
-
-EM_array <- foob ## WHY 8's in first column??
-
-## Need to divide M by 4, thus change ids?
-#### 500 per day per site? or 500 per site (500/4 per day?), also it does not keep the same id for the same indiiduals between days... so recap calc will not work?
-
-## EM_array_2 --> collapsed day so could make sst vector with all unique individuals caught per site; made sure each individual was only counted (recaps not counted)
+prod(dim(EM_array)) # size of array for the likelihood
+length(EM_array[!is.na(EM_array)]) # Number of datapoints contributing to the likelihood
 
 # get starting values 1 if indiviudal caught on any day at any trap for each site
-
-
-z <- matrix(NA, G, M)
-bar <- matrix(NA, K, M)
-for(g in 1:G) {
-  for(k in 1:K) {
-    foog <- as.matrix(EM_array[ , , k, g])
-    bar[k, ] <- apply(foog, 1, max, na.rm = TRUE)
-  }
-  z[g, ] <- apply(bar, 2, max, na.rm = TRUE)
+# this needs to be the size of the augment not just the size of the EM_array captures
+psi_st <- 0.2
+Z_st <- matrix(rbinom(max(M), 1, psi_st), n_sites, max(M))
+for(l in 1:n_sites) {
+  Z_st[l, 1:n_ind_site$n[l]] <- 1 ##?
 }
+psi_sex_st <- 0.5
 
-#Start values for s (activity centers) of augments (from random uniform constrained by state space size)
-#X <- traplocsA
-# Now populated by starting positions uniformally placed within state space
-# For every individual that is not 0, change starting x point to mean of traps associated with encounters for that individual; leaves 0's there from the augmented population and also puts in activity center for augmented individuals that were randomly given an encounter history (caught at least 1 time)
+# Start values for s (activity centers) of augments (from random uniform constrained by state space size)
 
-sum_caps <- apply(EM_array, c(1,2,4), sum)  ## c(1,2): dimensions to apply function to; 1 = rows, 2 = columns; collapsed day in this instance
-## this is wrong, it doesn't distinguish rows per day as different individuals thus the max number of individuals caught one day becomes the total number of caught inviduals here... Need to sum each individual per for each site
+s_st_obs <- EM_expanded %>%
+  left_join(ind_covs_sp) %>%
+  filter(count != 0) %>%
+  group_by(site_num, id_site) %>%
+  select(site_num, id_site, trap) %>%
+  summarise(loc = ((mean(trap) - 1) * 25) / 100 ) 
 
+# make augmented starting location dataframe - will have NA for augments
+s_st <- data.frame(expand.grid(site_num = 1:12, id_site = 1:max(M))) %>%
+  left_join(s_st_obs) %>%
+  as_tibble() %>%
+  arrange(site_num, id_site)
 
-traplocsE <- as.matrix(trap_locs[4, ])
-row.names(traplocsE) <- NULL
-colnames(traplocsE) <- NULL
+# randomly assign locations within the limits of the site to augmented individuals
+s_st <- s_st %>%
+  left_join(n_traps_site) %>%
+  ungroup() %>%
+  as.data.frame()
 
-unif_array <- array(NA, dim = c(M, G))
+n_missing <- s_st %>%
+  filter(is.na(loc)) %>%
+  nrow()
 
-for (g in 1:G){
-x <- runif(M, min = xlim[g, ][1], max = xlim[g, ][2])
-unif_array[ , g] <- as.matrix(x)
-}
+# s_st <- s_st %>%
+#   mutate(loc = if_else(is.na(loc), runif(n_missing, -1.5, ((((min(n_traps_site$max_traps) - 1) * 25) + 150) / 100)), loc)) 
 
+s_st[is.na(s_st)] <- runif(n_missing, -1.5, ((((min(n_traps_site$max_traps) - 1) * 25) + 150) / 100))
 
-sst <- matrix(NA, M, G)
+summary(s_st)
+hist(s_st$loc)
 
-for(g in 1:G){
-    sst[ , g] <- (sum_caps[ , , g] %*% traplocsE) / (ifelse(rowSums(sum_caps[ , , g]) > 0, rowSums(sum_caps[ , , g]), 1))
-}
-
-for(i in 1:M){
-  for(g in 1:G){
-sst[i, g] <- ifelse(sst[i , g] == 0, unif_array[i, g], sst[i, g])
-  }
-}
-
+# Select useful columns and spread to site x individual for analysis
+s_st <- s_st %>%
+  select(site_num, id_site, loc) %>%
+  pivot_wider(names_from = id_site, values_from = loc) %>%
+  ungroup() %>%
+  select(-site_num) %>%
+  as.matrix()
 
 ##### Sex vector divided by site
 
-sex_array <- array(NA, dim = c(M, G))
+sex_array <- array(NA, dim = c(M, n_sites))
 
-# make 4D array: individual (M) x trap (n_traps) x day (K) x site (G)
-# split by day
-EM_PRUB_sex <- EDF_PRUB %>%
-  group_by(site_num, ind, trap_id_edited, day, sex) %>%
-  select(site_num, ind, trap_id_edited, day, sex) %>%
-  mutate(count = 1) %>%
-  summarise_all(sum) %>%
-  #spread(trap_id_edited, count, fill = 0) %>%
+sex <- EM %>%
+  group_by(site_num, id_site, sex) %>%
+  select(site_num, id_site, sex) %>%
+  summarise_all(mean) %>%
+  right_join(expand.grid(id_site = 1:max(M), site_num = 1:n_sites)) %>%
+  mutate(sex2 = ifelse(sex == "M", 0, NA_integer_),
+         sex2 = ifelse(sex == "F", 1, sex2)) %>%
+  select(-sex) %>%
+  rename(sex = sex2) 
+
+summary(sex)
+unique(sex$sex)
+
+sex <- sex %>%
+  pivot_wider(names_from = id_site, values_from = sex) %>%
   ungroup() %>%
-  mutate(id = as.integer(as.factor(ind)))
-
-
-######
-EM_array2 <- matrix(NA_integer_, M, G)
-target <- c(1:M)
-
-# make 4D array: individual (M) x trap (n_traps) x day (K) x site (G)
-# split by day
-for(k in 1:K) {
-  for(g in 1:G) {
-    foo <- EM_PRUB_sex[(which(EM_PRUB$site_num == g)), ]
-    foo_less <- select(foo, -c(site_num, ind, day, trap_id_edited, count))
-    foo_less <- foo_less %>%
-      distinct %>%
-      mutate(sex = ifelse(sex == "U", NA, sex),
-             sex = ifelse(sex == "M", 0, sex),
-             sex = ifelse(sex == "F", 1, sex)) %>%
-      mutate(sex = as.integer(sex))
-    df_aug <- as.data.frame(matrix(NA_integer_, nrow = (M - nrow(foo_less)), ncol = 2), stringsAsFactors = FALSE)
-    # df_aug$site_num <- g
-    # df_aug <- df_aug[ , c(ncol(df_aug), 1:(ncol(df_aug)-1))]
-    colnames(df_aug) <- colnames(foo_less)
-    foo_augment <- bind_rows(foo_less, df_aug)
-    target <- as.data.frame(1:M)
-    colnames(target) <- "id"
-    foo_augment <- left_join(target, foo_augment, by = "id")
-    foo_augment <- select(foo_augment, -id)
-    #foob_arranged <- foo_augment[match(target, foo_augment[ , 2]), ]
-    EM_array2[ , g] <- as.matrix(foo_augment)
-  }
-}
-
-Sex <- t(EM_array2)
-
+  select(-site_num) %>%
+  as.matrix()
 
 #### Behavior Matrix ######
 
-BM <- EDF_PRUB %>%
-  group_by(site_num, ind, day, recap) %>%
-  select(site_num, ind, day, recap) %>%
+# individual x day x site 0 until caught, 1's after caught, don't necessarily need for augmented individuals
+
+EM_expanded
+em_wide
+
+recaps <- EM_expanded %>%
+  group_by(site_num, ind, id_site, day) %>%
+  summarise(count = sum(count, na.rm = TRUE)) %>%
+  group_by(site_num, ind, id_site) %>%
+  mutate(caps = cumsum(count),
+         recap = caps - count)
+
+recaps <- recaps %>%
   ungroup() %>%
-  mutate(id = as.integer(as.factor(ind)))
+  select(site_num, id_site, day, recap) %>%
+  mutate(recap = if_else(recap > 1, 1, recap)) %>%
+  pivot_wider(names_from = day, values_from = recap, names_prefix = "day_")
 
-str(BM)
-BM
-
-BM <- as.data.frame(BM, stringsAsFactors = FALSE)
-
-BM$behav <- ifelse(BM$recap == "N", 1, 0)
-
-BM_less <- select(BM, -recap)
-
-B_array <- array(NA, dim = c(M, 2, K, G))
-
-for (i in 1:M){
-  for(k in 1:K){
-    for(g in 1:G){
-      foo <- BM_less[(which(BM_less[]$day == k & BM_less$site_num == g)), ]
-      foo_less <- select(foo, -c(site_num, ind, day))
-      df_aug <- as.data.frame(matrix(0, nrow = (M - nrow(foo_less)), ncol = 2), stringsAsFactors = FALSE)
-      colnames(df_aug) <- colnames(foo_less)
-      foo_augment <- bind_rows(foo_less, df_aug)
-      foo_augment$id <- ifelse(foo_augment$id == 0, NA, foo_augment$id)
-      B_array[ , , k, g] <- as.matrix(foo_augment)
-    }
-  }
+recaptured <- array(0, dim = c(max(n_ind_site$n), n_days, n_sites))
+for(l in 1:n_sites) {
+  tmp <- recaps %>%
+    filter(site_num == l) %>%
+    select(starts_with("day")) %>%
+    as.matrix()
+  recaptured[1:nrow(tmp), 1:ncol(tmp), l] <- tmp
 }
 
-foob <- array(NA, dim = c(M, K, G))
+##### Augmented Zeros #####
 
-target <- c(1:M)
+augs <- matrix(0, n_sites, max(M))
 
-for (k in 1:K) {
-  for (g in 1:G) {
-    food <- B_array[ , , k, g]
-    foob_arranged <- food[match(target, food[ ,1]), ]
-    foob_arranged <- foob_arranged[ , -1]
-    foob_arranged[is.na(foob_arranged)] <- 0
-    #foob_arranged[ , 1] <- ifelse(foob_arranged[ , 1] == 0, NA, foob_arranged[ ,1])
-    #foob_arranged <- select()
-    #foob_arranged <- food[order(food[ , 1]), ]
-    foob[ , k, g] <- as.matrix(foob_arranged)
-  }
-}
+###### Number of individuals caught per day across sites #####
 
-# make all after first capture = 1
-for(g in 1:G) {
-  for(m in 1:M) {
-    for(k in 2:K) {
-      foob[m, k, g] <- ifelse(foob[m, k-1, g] >= 1, 2, foob[m, k, g])
-    }
-  }
-}
+caps_day <- EM_expanded %>%
+  ungroup() %>%
+  group_by(day) %>%
+  summarise(caps = sum(count, na.rm = TRUE))
 
-foob <- ifelse(foob == 1, 0, foob)
-C <- ifelse(foob == 2, 1, foob)
-
-n_sites <- G
+#### Create matrix changing site IDs to be spatially relevant ####
+# Matrix with current site IDs (which are sequential temporally) and spatially sequential site IDs
 
 
-max_ind_sp <- max(EM_array[ , , , ], na.rm = TRUE)
 
 ########## SAVE ALL OBJECTS NEEDED FOR MODEL ##########
 
-if(!dir.exists("Data/Derived")) dir.create("Data/Derived", recursive = TRUE)
+if(!dir.exists(paste0("Data/Derived/", Species, "/"))) dir.create(paste0("Data/Derived/", Species, "/"), recursive = TRUE)
 
 if(testing) {
-  save(z, sst, n_sites, EM_array, Sex, trap_locs, K, M, xlim, max_trap, C, G, run_date, max_ind_sp, file = paste0("Data/Derived/prub_testing_", run_date, ".RData"))
+  save(Species, recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, df_M, caps_day, file = paste0("Data/Derived/", Species, "/all_site_testing_", run_date, ".RData"))
 } else {
-  save(z, sst, n_sites, EM_array, Sex, trap_locs, K, M, xlim, max_trap, C, G, run_date, max_ind_sp, file = "Data/Derived/prub.RData") # other objects needed?
+  save(Species, recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, df_M, caps_day, file = "Data/Derived/", Species, "/all_site.RData") # other objects needed?
 }
 
+rm(list = ls())
