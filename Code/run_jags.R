@@ -8,7 +8,11 @@ library(jagsUI)
 ######### Load Data from Previous script #########
 
 testing <- FALSE
+<<<<<<< HEAD
 Species <- "CSER"
+=======
+Species <- "PRUB"
+>>>>>>> 7c3bfef3019ad41381e2f6f4db08c80c2be38e57
 run_date <- Sys.Date()
 
 if(testing) {

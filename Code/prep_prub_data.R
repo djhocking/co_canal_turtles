@@ -9,8 +9,9 @@ library(tidyr)
 library(rgdal)
 library(sp)
 
-testing <- TRUE
+testing <- FALSE
 run_date <- Sys.Date()
+Species <- c("CPIC", "PRUB", "CSER", "SODO")[2] # change index depending on species
 
 nowt <- function(x = NULL) x
 
@@ -108,7 +109,6 @@ EDF <- EDF %>%
          !is.na(sex))
 
 #Take out sites H and I and get data only for 1 species
-Species <- c("CPIC", "PRUB", "CSER", "SODO")[2] # change index depending on species
 EDF_Sp <- EDF %>%
   filter(site != "H" & site != "I" & species == Species)
 # EDF_Sp
@@ -336,6 +336,7 @@ recaps <- recaps %>%
   ungroup() %>%
   select(site_num, id_site, day, recap) %>%
   mutate(recap = if_else(recap > 1, 1, recap)) %>%
+  dplyr::filter(!is.na(id_site)) %>%
   pivot_wider(names_from = day, values_from = recap, names_prefix = "day_")
 
 recaptured <- array(0, dim = c(max(n_ind_site$n), n_days, n_sites))
@@ -344,6 +345,7 @@ for(l in 1:n_sites) {
     filter(site_num == l) %>%
     select(starts_with("day")) %>%
     as.matrix()
+  if(nrow(tmp) == 0) next
   recaptured[1:nrow(tmp), 1:ncol(tmp), l] <- tmp
 }
 
@@ -370,7 +372,7 @@ if(!dir.exists(paste0("Data/Derived/", Species, "/"))) dir.create(paste0("Data/D
 if(testing) {
   save(Species, recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, df_M, caps_day, file = paste0("Data/Derived/", Species, "_all_site_testing_", run_date, ".RData"))
 } else {
-  save(Species, recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, df_M, caps_day, file = paste0("Data/Derived/", Species, "_all_site_", run_date, ".RData")) # other objects needed?
+  save(Species, recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, df_M, caps_day, file = paste0("Data/Derived/", Species, "_all_site_", run_date, ".RData"))
 }
 
 rm(list = ls())
