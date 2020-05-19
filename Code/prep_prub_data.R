@@ -368,9 +368,9 @@ caps_day <- EM_expanded %>%
 if(!dir.exists(paste0("Data/Derived/", Species, "/"))) dir.create(paste0("Data/Derived/", Species, "/"), recursive = TRUE)
 
 if(testing) {
-  save(Species, recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, df_M, caps_day, file = paste0("Data/Derived/", Species, "/all_site_testing_", run_date, ".RData"))
+  save(Species, recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, run_date, df_M, caps_day, file = paste0("Data/Derived/", Species, "_all_site_testing_", run_date, ".RData"))
 } else {
-  save(Species, recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, df_M, caps_day, file = "Data/Derived/", Species, "/all_site.RData") # other objects needed?
+  save(Species, recaptured, Z_st, s_st, trap_locs, augs, sex, psi_st, psi_sex_st, EM_array, n_days, n_sites, n_traps_site, n_ind_site, M, xlim, df_M, caps_day, file = paste0("Data/Derived/", Species, "_all_site_", run_date, ".RData")) # other objects needed?
 }
 
 rm(list = ls())
