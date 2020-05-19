@@ -12,8 +12,10 @@ library(sp)
 testing <- TRUE
 run_date <- Sys.Date()
 
+nowt <- function(x = NULL) x
+
 # number of possible individuals per site
-M <- 500  
+M <- 1000  
 if(testing) {
   M <- 100
 }
@@ -33,6 +35,20 @@ n_traps_site <- n_traps_site[order(n_traps_site$site_num), ]
 n_traps <- n_traps_site$max_traps
 # K <- max(EDF$day)
 n_days <- max(EDF$day)
+
+##### Make Combos of site-trap-days #####
+# this will be used later to expand capture histories
+
+combo_site_trap <- tidyr::expand_grid(site_num = n_traps_site$site_num, 
+                                 trap = 1:max(n_traps)) %>%
+  dplyr::left_join(n_traps_site) %>%
+  dplyr::filter(trap <= max_traps)
+
+combo_site_trap_day <- tidyr::expand_grid(site_num = n_traps_site$site_num, 
+                                          trap = 1:max(n_traps),
+                                          day = 1:n_days) %>%
+  dplyr::left_join(n_traps_site) %>%
+  dplyr::filter(trap <= max_traps)
 
 ########## Process Trap Locations ###########
 trap_locs_degrees <- coords
@@ -109,14 +125,15 @@ EM <- EDF_Sp %>%
   group_by(site_num) %>%
   mutate(id_site = as.integer(as.factor(ind))) %>%
   ungroup() %>%
-  full_join(n_traps_site) %>%
+  left_join(n_traps_site) %>% # changed to left join because missing will be handled with grid_expand
   select(-c(site, max_traps)) %>%
   # mutate(count = ifelse(is.na(count), 0, count)) %>%
-  mutate(day = ifelse(is.na(day), 1, day)) %>%
-  mutate(id_site = ifelse(is.na(id_site), 1, id_site)) %>%
-  mutate(trap = ifelse(is.na(trap), 13, trap)) %>%
-  mutate(trap = ifelse(trap == 13 & site_num == 5, 14, trap)) %>%
-  mutate(trap = ifelse(trap == 13 & site_num == 6, 11, trap)) ## change
+  # mutate(day = ifelse(is.na(day), 1, day)) %>%
+  # mutate(id_site = ifelse(is.na(id_site), 1, id_site)) %>% # is this needed???
+  # mutate(trap = ifelse(is.na(trap), 13, trap)) %>%
+  # mutate(trap = ifelse(trap == 13 & site_num == 5, 14, trap)) %>%
+  # mutate(trap = ifelse(trap == 13 & site_num == 6, 11, trap)) ## change
+  nowt()
 
 
 # get number of unique individuals caught per site, with spatially relevant site IDs
@@ -152,19 +169,29 @@ df_M <- n_ind_site %>%
   mutate(M = n / min_cap_rate + 10)
 df_M
 
-
-EM_expanded <- EM %>%
-  expand(nesting(site_num, ind), trap, day) %>%
+# 
+# EM_expanded <- EM %>%
+#   expand(nesting(site_num, ind), trap, day) %>%
+EM_expanded <- combo_site_trap_day %>%
+  left_join(EM) %>%
+  # select(-id_site) %>%
+  # mutate(ind = if)
+  ungroup() %>%
+  # unnest() %>%
+  expand(nesting(site_num, ind, id_site), trap, day) %>%
   left_join(EM) %>%
   select(-sex) %>%
   ungroup() %>%
-  group_by(site_num) %>%
-  mutate(id_site = as.integer(as.factor(ind))) %>%
-  ungroup() %>%
-  #mutate(site_num = as.integer(as.factor(site))) %>%
+  # unnest() %>%
+  # group_by(site_num) %>%
+  # mutate(id_site = as.integer(as.factor(ind))) %>%
+  # ungroup() %>%
+  # mutate(site_num = as.integer(as.factor(site))) %>%
   left_join(n_traps_site) %>%
   select(-site) %>%
-  mutate(count = if_else(is.na(count) & trap <= max_traps, 0, count)) # %>%
+  mutate(count = if_else(is.na(count) & trap <= max_traps & !is.na(ind), 0, count)) %>%
+  arrange(site_num, ind, trap, day) %>%
+  nowt()
 
 # expected sizes for each individual at each site x trap x day
 n_ind_site$n * 14 * 4
@@ -173,10 +200,16 @@ sum(n_ind_site$n * 14 * 4) == nrow(EM_expanded) # FALSE FOR Species not at each 
 
 summary(EM_expanded)
 
-em_wide <- EM_expanded %>%
-  arrange(trap, site_num, id_site, day) %>%
-  pivot_wider(names_from = trap, values_from = count, names_prefix = "trap_")
+dplyr::filter(EM_expanded, site_num == 1 & day == 1)
 
+em_wide <- EM_expanded %>%
+  # ungroup() %>%
+  # mutate(ind = ifelse(is.na(ind), "A", ind),
+  #        id_site = ifelse(is.na(id_site), -1, id_site)) %>%
+  arrange(trap, site_num, id_site, day) %>%
+  pivot_wider(names_from = trap, values_from = count, names_prefix = "trap_") # id_cols = c(site_num, day, ind), 
+
+# dplyr::filter(em_wide, site_num == 1 & day == 1)
 # expected sizes for each individual at each site x day
 sum(n_ind_site$n * 4) == nrow(em_wide)
 summary(em_wide)
@@ -201,8 +234,10 @@ for(l in 1:n_sites) {
   for(k in 1:n_days) {
     tmp <- em_wide %>%
       filter(site_num == l,
-             day == k) %>%
+             day == k,
+             !is.na(ind)) %>%
       dplyr::select(starts_with("trap"))
+    if(nrow(tmp) == 0) next
     EM_array[1:nrow(tmp), , k, l] <- as.matrix(tmp)
   }
 }

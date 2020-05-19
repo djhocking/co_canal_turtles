@@ -7,7 +7,8 @@ library(jagsUI)
 
 ######### Load Data from Previous script #########
 
-testing <- FALSE
+testing <- TRUE
+Species <- "PRUB"
 run_date <- Sys.Date()
 
 if(testing) {
@@ -25,7 +26,7 @@ if(testing) {
 ######### Load Data from Previous script #########
 
 if(testing) {
-  load(file = paste0("Data/Derived/all_site_testing_", run_date, ".RData"))
+  load(file = paste0("Data/Derived/", Species, "/all_site_testing_", run_date, ".RData"))
 } else {
   load(file = "Data/Derived/all_site.RData")
 }
@@ -123,7 +124,11 @@ model{
     
     density_ha[g] <- sum(z[g , 1:M[g]]) / ((xlim[g, 2] - xlim[g, 1]) * 100 * width_m[g]) * 10000 # density per hectare
     
-    p_cap_site[g] <- n0[g] / (n0[g] + sum(z[g , (n0[g]+1):M[g]]))
+    # p_cap_site[g] <- n0[g] / (n0[g] + sum(z[g , (n0[g]+1):M[g]]))
+    for(i in 1:M[g]) {
+      p_cap_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i])
+    }
+    p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
     
     for(i in 1:M[g]) {
 p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
@@ -178,19 +183,20 @@ initsf <- function() {
   psi_st <- runif(1, 0.05, 0.2)
   Z_st <- matrix(NA_integer_, n_sites, max(M))
   for(n in 1:n_sites) {
-    Z_st[n, 1:M[n]] <- rbinom(M[n], 1, 1-psi_st)
+    Z_st[n, 1:M[n]] <- rbinom(M[n], 1, psi_st)
     Z_st[n, 1:n_ind_site$n[n]] <- 1
   }
   s_st[is.na(Z_st)] <- NA
   return(
-    list(s = s_st, 
+    list( 
          z = Z_st, 
-         psi = n_ind_site$n / rowSums(Z_st, na.rm = TRUE), 
-         psi_sex = sum(sex*Z_st)/sum(Z_st))
+         psi = (n_ind_site$n + 1) / rowSums(Z_st, na.rm = TRUE),
+         psi_sex = (sum(sex*Z_st) + 1) / sum(Z_st, na.rm = TRUE),
+         s = s_st)
   )
 }
 
-rowSums(Z_st, na.rm = TRUE)
+# rowSums(Z_st, na.rm = TRUE)
 
 ## not working: needs testing - all z should be 1 or 0 and psi should be a vector of values between 0 and 1 that are based on z and n0.
 # initsf <- function() {
@@ -211,6 +217,9 @@ rowSums(Z_st, na.rm = TRUE)
 
 parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") ## "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
+# no p-cap-site for species without caps at all sites
+# parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") 
+
 start_zeros <- Sys.time()
 
 out <- jagsUI(data = jags_data_site, 
@@ -228,6 +237,6 @@ end_zeros <- Sys.time()
 
 end_zeros - start_zeros
 
-saveRDS(out, file = paste0("Results/JAGS/all_sites_reg_", run_date, ".rds"))
+saveRDS(out, file = paste0("Results/JAGS/", Species, "all_sites_reg_", run_date, ".rds"))
 
 
