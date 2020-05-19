@@ -10,7 +10,10 @@ library(dplyr)
 
 ######### Load MCMC Object #########
 
-out <- readRDS("Results/JAGS/all_sites_reg_2020-05-01.rds")
+# out <- readRDS("Results/JAGS/all_sites_reg_2020-05-01.rds")
+Species <- "PRUB"
+run_date <- "2020-05-18"
+out <- readRDS(paste0("Results/JAGS/", Species, "_all_sites_reg_", run_date, ".rds"))
 
 samples <- out$samples
 

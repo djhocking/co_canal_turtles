@@ -8,11 +8,7 @@ library(jagsUI)
 ######### Load Data from Previous script #########
 
 testing <- FALSE
-<<<<<<< HEAD
-Species <- "CSER"
-=======
 Species <- "PRUB"
->>>>>>> 7c3bfef3019ad41381e2f6f4db08c80c2be38e57
 run_date <- Sys.Date()
 
 if(testing) {
@@ -32,7 +28,7 @@ if(testing) {
 if(testing) {
   load(file = paste0("Data/Derived/", Species, "_all_site_testing_", run_date, ".RData"))
 } else {
-  load(file = paste0("Data/Derived/", Species, "_all_site_", run_date, ".RData"))
+  load(file = paste0("Data/Derived/", Species, "_all_site_reg_", run_date, ".RData"))
 }
 
 # make M variable by site to speed code
@@ -130,13 +126,13 @@ model{
     
     # p_cap_site[g] <- n0[g] / (n0[g] + sum(z[g , (n0[g]+1):M[g]]))
     for(i in 1:M[g]) {
-      p_cap_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i])
+      p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i])
     }
-    p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
+    p_cap_site[g] <- mean(p_site_ind[g, 1:M[g]])
     
-    for(i in 1:M[g]) {
-p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
-    } # i
+#     for(i in 1:M[g]) {
+# p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i])
+#     } # i
 
     # site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
     site_zeros[g] ~ dnorm(density_ha[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g]), pow(3, -2))
@@ -241,6 +237,6 @@ end_zeros <- Sys.time()
 
 end_zeros - start_zeros
 
-saveRDS(out, file = paste0("Results/JAGS/", Species, "all_sites_reg_", run_date, ".rds"))
+saveRDS(out, file = paste0("Results/JAGS/", Species, "_all_sites_reg_", run_date, ".rds"))
 
 
