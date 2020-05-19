@@ -4,6 +4,7 @@ library(rjags)
 # library(nimble)
 # library(devtools)
 # install_github("https://github.com/stan-dev/bayesplot" # if want latest development version of bayesplot)
+library(ggplot2)
 library(bayesplot)
 library(dplyr)
 # library(tibble)
@@ -87,6 +88,14 @@ p + facet_text(size = 15)
 
 p <- mcmc_trace(samples, regex_pars = c("N"))
 p + facet_text(size = 15)
+
+p <- mcmc_hist(samples, regex_pars = c("N"))
+p + facet_text(size = 15)
+p + geom_vline(data = n_ind_site, aes(xintercept = n), color = "red") + facet_wrap(~site_num)
+
+EM_array[ , , , 1]
+EM_array[ , , 3, 1]
+EM_array[ , , 4, 1]
 
 # p <- mcmc_trace(samples, regex_pars = c("mu_psi_site"))
 # p + facet_text(size = 15)

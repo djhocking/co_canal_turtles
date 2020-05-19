@@ -9,7 +9,7 @@ library(tidyr)
 library(rgdal)
 library(sp)
 
-testing <- FALSE
+testing <- TRUE
 run_date <- Sys.Date()
 Species <- c("CPIC", "PRUB", "CSER", "SODO")[2] # change index depending on species
 
@@ -170,7 +170,9 @@ n_ind_site <- EM %>%
   distinct() %>%
   summarise(n = max(id_site)) %>%
   full_join(site_num_all) %>%
-  mutate(n = ifelse(is.na(n), 0, n)) # unnecessary now...
+  mutate(n = ifelse(is.na(n), 0, n)) %>% # unnecessary now...
+  arrange(site_num) %>%
+  nowt()
 
 # n_sites <- length(unique(n_ind_site$site_num))
 n_sites <- 12
@@ -215,7 +217,7 @@ summary(EM_expanded)
 dplyr::filter(EM_expanded, site_num == 1 & day == 1)
 
 em_wide <- EM_expanded %>%
-  # ungroup() %>%
+  ungroup() %>%
   # mutate(ind = ifelse(is.na(ind), "A", ind),
   #        id_site = ifelse(is.na(id_site), -1, id_site)) %>%
   arrange(trap, site_num, id_site, day) %>%
@@ -233,7 +235,9 @@ ind_covs <- EDF %>%
   summarise(carapace = mean(carapace),
             mass = mean(mass),
             n_measurements = n(),
-            mean_trap = mean(trap))
+            mean_trap = mean(trap)) %>%
+  arrange(site_num, species, ind) %>%
+  nowt()
 
 
 ind_covs_sp <- ind_covs %>%
@@ -273,7 +277,8 @@ s_st_obs <- EM_expanded %>%
   filter(count != 0) %>%
   group_by(site_num, id_site) %>%
   select(site_num, id_site, trap) %>%
-  summarise(loc = ((mean(trap) - 1) * 25) / 100 ) 
+  arrange(site_num, id_site, trap) %>%
+  summarise(loc = ((mean(trap) - 1) * 25) / 100 )
 
 # make augmented starting location dataframe - will have NA for augments
 s_st <- data.frame(expand.grid(site_num = 1:12, id_site = 1:max(M))) %>%
@@ -318,6 +323,7 @@ sex <- EM %>%
   right_join(expand.grid(id_site = 1:max(M), site_num = 1:n_sites)) %>%
   mutate(sex2 = ifelse(sex == "M", 0, NA_integer_),
          sex2 = ifelse(sex == "F", 1, sex2)) %>%
+  arrange(site_num, id_site) %>%
   select(-sex) %>%
   rename(sex = sex2) 
 
@@ -351,6 +357,7 @@ recaps <- recaps %>%
   select(site_num, id_site, day, recap) %>%
   mutate(recap = if_else(recap > 1, 1, recap)) %>%
   dplyr::filter(!is.na(id_site)) %>%
+  arrange(site_num, id_site, day) %>%
   pivot_wider(names_from = day, values_from = recap, names_prefix = "day_")
 
 recaptured <- array(0, dim = c(max(n_ind_site$n), n_days, n_sites))

@@ -7,14 +7,14 @@ library(jagsUI)
 
 ######### Load Data from Previous script #########
 
-testing <- FALSE
+testing <- TRUE
 Species <- "PRUB"
 run_date <- Sys.Date()
 
 if(testing) {
   ni = 300
   nt = 1
-  nc = 20
+  nc = 2
   nb = 200
 } else {
   nb = 2000
@@ -237,6 +237,11 @@ end_zeros <- Sys.time()
 
 end_zeros - start_zeros
 
-saveRDS(out, file = paste0("Results/JAGS/", Species, "_all_sites_reg_", run_date, ".rds"))
+if(testing) {
+  saveRDS(out, file = paste0("Results/JAGS/", Species, "_all_sites_reg_testing_", run_date, ".rds"))
+} else {
+  saveRDS(out, file = paste0("Results/JAGS/", Species, "_all_sites_reg_", run_date, ".rds"))
+}
+
 
 
