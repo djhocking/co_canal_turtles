@@ -336,6 +336,7 @@ recaps <- recaps %>%
   ungroup() %>%
   select(site_num, id_site, day, recap) %>%
   mutate(recap = if_else(recap > 1, 1, recap)) %>%
+  dplyr::filter(!is.na(id_site)) %>%
   pivot_wider(names_from = day, values_from = recap, names_prefix = "day_")
 
 recaptured <- array(0, dim = c(max(n_ind_site$n), n_days, n_sites))
@@ -344,6 +345,7 @@ for(l in 1:n_sites) {
     filter(site_num == l) %>%
     select(starts_with("day")) %>%
     as.matrix()
+  if(nrow(tmp) == 0) next
   recaptured[1:nrow(tmp), 1:ncol(tmp), l] <- tmp
 }
 
