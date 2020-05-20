@@ -115,7 +115,7 @@ model{
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
       } # k
-      zeros[i, g] ~ dbern(1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i]))
+      zeros[i, g] ~ dbern((1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])) * z[g, i])
     } # i
     
     ##### Derived parameters #####
@@ -215,7 +215,7 @@ initsf <- function() {
 #   )
 # }
 
-parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") ## "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
+parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") #, "z") ## "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 # no p-cap-site for species without caps at all sites
 # parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") 
