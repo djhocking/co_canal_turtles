@@ -9,9 +9,9 @@ library(tidyr)
 library(rgdal)
 library(sp)
 
-testing <- TRUE
+testing <- FALSE
 run_date <- Sys.Date()
-Species <- c("CPIC", "PRUB", "CSER", "SODO")[2] # change index depending on species
+Species <- c("CPIC", "PRUB", "CSER", "SODO")[3] # change index depending on species
 
 # number of possible individuals per site
 M <- switch(Species,
