@@ -32,7 +32,7 @@ if(testing) {
   load(file = paste0("Data/Derived/", Species, "_all_site_reg_", run_date, ".RData"))
 }
 
-# make M variable by site to speed code
+# make M variable by site to speed code 
 # EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
 # 
 # #Take out sites H and I

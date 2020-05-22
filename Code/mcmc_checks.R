@@ -91,6 +91,7 @@ p + facet_text(size = 15)
 
 p <- mcmc_hist(samples, regex_pars = c("N"))
 p + facet_text(size = 15)
+# p + vline_at(n_ind_site$n)
 # p + geom_vline(data = n_ind_site, aes(xintercept = n), color = "red") + facet_wrap(~site_num) # doesn't work
 # 
 # EM_array[ , , , 1]
