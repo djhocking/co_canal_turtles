@@ -9,15 +9,15 @@ library(tidyr)
 library(rgdal)
 library(sp)
 
-testing <- TRUE
+testing <- FALSE
 run_date <- Sys.Date()
-Species <- c("CPIC", "PRUB", "CSER", "SODO")[2] # change index depending on species
+Species <- c("CPIC", "PRUB", "CSER", "SODO")[4] # change index depending on species
 
 # number of possible individuals per site
 M <- switch(Species,
             CPIC = 7000,
-            PRUB = 500,
-            CSER = 400,
+            PRUB = 1000,
+            CSER = 500,
             SODO = 1000
 )
 
@@ -180,7 +180,7 @@ n_days <- 4
 
 # assume capture rate of min_cap_rate (~0.03) to get max individuals to augment (M[g])
 df_M <- n_ind_site %>%
-  mutate(M = n / min_cap_rate + 100)
+  mutate(M = if_else(n > 0, n / min_cap_rate + 10, 500))
 df_M
 
 # 

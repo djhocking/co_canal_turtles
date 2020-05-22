@@ -7,20 +7,21 @@ library(jagsUI)
 
 ######### Load Data from Previous script #########
 
-testing <- TRUE
-Species <- "PRUB"
+testing <- FALSE
+Species <- "SODO"
 run_date <- Sys.Date()
+set.seed(239871)
 
 if(testing) {
   ni = 300
   nt = 1
-  nc = 2
+  nc = 20
   nb = 200
 } else {
-  nb = 2000
-  ni = 12000
+  nb = 5000
+  ni = 55000
   nc = 8
-  nt = 4
+  nt = 10
 }
 
 ######### Load Data from Previous script #########
@@ -115,7 +116,7 @@ model{
           logit(p0[g, i, j, k]) <- alpha0[g, k]
         } # j
       } # k
-      zeros[i, g] ~ dbern((1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])) * z[g, i])
+      zeros[i, g] ~ dbern(1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i]))
     } # i
     
     ##### Derived parameters #####
@@ -126,13 +127,13 @@ model{
     
     # p_cap_site[g] <- n0[g] / (n0[g] + sum(z[g , (n0[g]+1):M[g]]))
     for(i in 1:M[g]) {
-      p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i])
+      p_cap_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i])
     }
-    p_cap_site[g] <- mean(p_site_ind[g, 1:M[g]])
+    p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
     
-#     for(i in 1:M[g]) {
-# p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i])
-#     } # i
+    for(i in 1:M[g]) {
+p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
+    } # i
 
     # site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
     site_zeros[g] ~ dnorm(density_ha[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g]), pow(3, -2))
@@ -215,7 +216,7 @@ initsf <- function() {
 #   )
 # }
 
-parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") #, "z") ## "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
+parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") ## "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 # no p-cap-site for species without caps at all sites
 # parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") 
@@ -237,11 +238,6 @@ end_zeros <- Sys.time()
 
 end_zeros - start_zeros
 
-if(testing) {
-  saveRDS(out, file = paste0("Results/JAGS/", Species, "_all_sites_reg_testing_", run_date, ".rds"))
-} else {
-  saveRDS(out, file = paste0("Results/JAGS/", Species, "_all_sites_reg_", run_date, ".rds"))
-}
-
+saveRDS(out, file = paste0("Results/JAGS/", Species, "_all_sites_reg_", run_date, ".rds"))
 
 
