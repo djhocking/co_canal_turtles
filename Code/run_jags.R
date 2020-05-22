@@ -4,12 +4,14 @@
 library(parallel)
 library(dplyr)
 library(jagsUI)
+library(yaml)
 
-######### Load Data from Previous script #########
+config <- yaml.load_file("Code/config.yml") 
 
-testing <- FALSE
-Species <- "SODO"
-run_date <- Sys.Date()
+testing <- config$testing
+run_date <- config$run_date
+Species <- config$Species
+
 set.seed(239871)
 
 if(testing) {

@@ -8,10 +8,13 @@ library(dplyr)
 library(tidyr)
 library(rgdal)
 library(sp)
+library(yaml)
 
-testing <- FALSE
-run_date <- Sys.Date()
-Species <- c("CPIC", "PRUB", "CSER", "SODO")[4] # change index depending on species
+config <- yaml.load_file("Code/config.yml") 
+
+testing <- config$testing
+run_date <- config$run_date
+Species <- config$Species
 
 # number of possible individuals per site
 M <- switch(Species,
