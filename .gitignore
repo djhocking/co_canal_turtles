@@ -12,6 +12,8 @@ Data/Derived/
 Results/JAGS/
 Results/*
 Results
+Code/JAGS/zero_test.txt
+Code/config.yml
 
 ._*
 gSMR-faster.jag

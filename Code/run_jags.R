@@ -17,7 +17,7 @@ set.seed(239871)
 if(testing) {
   ni = 300
   nt = 1
-  nc = 20
+  nc = 2
   nb = 200
 } else {
   nb = 5000
@@ -128,14 +128,10 @@ model{
     density_ha[g] <- sum(z[g , 1:M[g]]) / ((xlim[g, 2] - xlim[g, 1]) * 100 * width_m[g]) * 10000 # density per hectare
     
     # p_cap_site[g] <- n0[g] / (n0[g] + sum(z[g , (n0[g]+1):M[g]]))
-    for(i in 1:M[g]) {
-      p_cap_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i])
-    }
-    p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
-    
-    for(i in 1:M[g]) {
-p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
-    } # i
+    # for(i in 1:n0[g]) {
+    #   p_cap_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
+    # }
+    # p_cap_site[g] <- mean(p_cap_site_ind[g, 1:n0[g]])
 
     # site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
     site_zeros[g] ~ dnorm(density_ha[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g]), pow(3, -2))
@@ -218,7 +214,7 @@ initsf <- function() {
 #   )
 # }
 
-parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") ## "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
+parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "home_50", "home_95", "density_ha") ## "p_cap_site",  "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 # no p-cap-site for species without caps at all sites
 # parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") 
