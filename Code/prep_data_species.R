@@ -51,6 +51,18 @@ n_traps <- n_traps_site$max_traps
 # K <- max(EDF$day)
 n_days <- max(EDF$day)
 
+#### Check SODO Spatial recaps ####
+
+sodo <- EDF %>%
+  dplyr::filter(species == "SODO") %>%
+  dplyr::mutate(count = 1) %>%
+  tidyr::pivot_wider(id_cols = c("site", "ind", "day"), names_from = "trap", values_from = "count") %>%
+  arrange(site, ind, day) %>%
+  nowt()
+data.frame(sodo)
+tail(data.frame(sodo), 20)
+######
+
 ##### Make Combos of site-trap-days #####
 # this will be used later to expand capture histories
 

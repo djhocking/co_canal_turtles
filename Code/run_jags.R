@@ -34,30 +34,12 @@ if(testing) {
   load(file = paste0("Data/Derived/", Species, "_all_site_reg_", run_date, ".RData"))
 }
 
-# make M variable by site to speed code 
-# EDF <- read.csv(file = "Data/EDF.csv", stringsAsFactors = FALSE)
-# 
-# #Take out sites H and I
-# EDF_CPIC <- EDF %>%
-#   filter(site != "H" & site != "I" & species == "CPIC")
-# str(EDF_CPIC)
-
-
 # restrict M to being the maximum size of the data array so the jags loops doesn't go out of bounds
 M <- if_else(df_M$M > M, M, trunc(df_M$M))
-# M <- if_else(df_M$M < max_ind_sp, max_ind_sp, M) # real captures can be up to row 750 at any site, all after are definitely augmentation - not anymore
-
-# zeros <- matrix(NA, max(M), n_sites)
-# for(z in 1:n_sites) {
-# zoo = matrix(0, n_ind_site$n[z], 1)
-# zeros[ , z] = rbind(zoo, matrix(NA, max(M) - n_ind_site$n[z], 1))
-# }
 
 zeros <- matrix(0, max(M), n_sites)
 
 ######### JAGS Model with Zero Trick ##########
-
-
 scr_zeros <- cat("
 model{
   
@@ -127,6 +109,7 @@ model{
     
     density_ha[g] <- sum(z[g , 1:M[g]]) / ((xlim[g, 2] - xlim[g, 1]) * 100 * width_m[g]) * 10000 # density per hectare
     
+    # Problems for sites with no caps and iterations estimating N = 0
     # p_cap_site[g] <- n0[g] / (n0[g] + sum(z[g , (n0[g]+1):M[g]]))
     # for(i in 1:n0[g]) {
     #   p_cap_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
@@ -195,29 +178,7 @@ initsf <- function() {
   )
 }
 
-# rowSums(Z_st, na.rm = TRUE)
-
-## not working: needs testing - all z should be 1 or 0 and psi should be a vector of values between 0 and 1 that are based on z and n0.
-# initsf <- function() {
-#   psi_st <- runif(1, 0.05, 0.2)
-#   Z_st <- matrix(rbinom(n_sites * max(M, 1, psi_st)), n_sites, max(M))
-#   for(l in 1:n_sites) {
-#     zoo = matrix(1, 1, n_ind_site$n[l])
-#     Z_st[l, ] = cbind(zoo, matrix(NA, 1, M[l] - n_ind_site$n[l]))
-#   }
-#   
-#   return(
-#   list(s = s_st, 
-#        z = Z_st, 
-#        psi = n_ind_site$n / rowSums(Z_st), 
-#        psi_sex = runif(1, 0.3, 0.8))
-#   )
-# }
-
 parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "home_50", "home_95", "density_ha") ## "p_cap_site",  "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
-
-# no p-cap-site for species without caps at all sites
-# parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "p_cap_site", "home_50", "home_95", "density_ha") 
 
 start_zeros <- Sys.time()
 
