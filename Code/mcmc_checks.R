@@ -11,11 +11,19 @@ library(dplyr)
 
 nowt <- function(x = NULL) x
 
+testing <- FALSE
+Species <- "SODO"
+run_date <- "2020-05-21"
+
+if(testing) {
+  load(file = paste0("Data/Derived/", Species, "_all_site_testing_", run_date, ".RData"))
+} else {
+  load(file = paste0("Data/Derived/", Species, "_all_site_reg_", run_date, ".RData"))
+}
+
 ######### Load MCMC Object #########
 
 # out <- readRDS("Results/JAGS/all_sites_reg_2020-05-01.rds")
-Species <- "CSER"
-run_date <- "2020-05-21"
 out <- readRDS(paste0("Results/JAGS/", Species, "_all_sites_reg_", run_date, ".rds"))
 
 samples <- out$samples
@@ -26,16 +34,6 @@ samples_df<- samples %>%
   as.matrix(.) %>%
   data.frame(.)
 # names(samples_df) <- colnames
-
-samples_df %>%
-  dplyr::select(starts_with("N.")) %>%
-  dplyr::summarise_all(list(min = min, 
-                            # q25 = quantile(., 0.25), 
-                            median = median, 
-                            # q75 = quantile(., 0.75), 
-                            max = max,
-                            mean = mean, 
-                            sd = sd))
   
 samples_N <- samples_df %>%
   dplyr::select(starts_with("N."))
@@ -45,7 +43,7 @@ summary_N <- samples_N %>%
   dplyr::mutate(n = n_ind_site$n,
                 check = minimum >= n) %>%
   nowt()
-
+summary_N
 #----- Get proportion of total individuals captured over all sample periods and traps -----
 samples_prop_cap <- samples_N
 samples_prop_cap[ , ] <- NA_real_
@@ -71,7 +69,7 @@ ggplot(samples_cap_long, aes(p)) + geom_histogram(bins = 50, aes(y = ..density..
 
 ######### Check MCMC ########
 
-color_scheme_set("mix-blue-pink")
+# color_scheme_set("mix-blue-pink")
 p <- mcmc_trace(samples, regex_pars = c("mu"))
 p + facet_text(size = 15)
 
@@ -88,6 +86,9 @@ p <- mcmc_trace(samples, regex_pars = c("alpha3"))
 p + facet_text(size = 15)
 
 p <- mcmc_trace(samples, regex_pars = c("sigma"))
+p + facet_text(size = 15)
+
+p <- mcmc_dens_chains(samples, regex_pars = c("sigma"))
 p + facet_text(size = 15)
 
 # 50% kernal density home range (+/- 0.68 SD)
