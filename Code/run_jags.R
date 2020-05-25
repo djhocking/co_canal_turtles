@@ -105,7 +105,7 @@ model{
     
     ##### Derived parameters #####
     N[g] <- sum(z[g , 1:M[g]])
-    density[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
+    density_linear[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
     
     density_ha[g] <- sum(z[g , 1:M[g]]) / ((xlim[g, 2] - xlim[g, 1]) * 100 * width_m[g]) * 10000 # density per hectare
     
@@ -116,7 +116,7 @@ model{
     # }
     # p_cap_site[g] <- mean(p_cap_site_ind[g, 1:n0[g]])
 
-    # site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
+    # site_zeros[g] ~ dnorm(density_linear[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
     site_zeros[g] ~ dnorm(density_ha[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g]), pow(3, -2))
     
   } # g
@@ -178,7 +178,7 @@ initsf <- function() {
   )
 }
 
-parameters <- c("density", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "home_50", "home_95", "density_ha") ## "p_cap_site",  "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
+parameters <- c("density_linear", "N", "alpha2", "alpha0", "alpha1", "mu_0", "sd_0", "mu_1", "sd_1", "beta_0", "beta_1", "beta_2", "psi_sex", "p_cap_day", "mu_psi", "sd_psi", "sigma_mean", "sigma", "home_50", "home_95", "density_ha") ## "p_cap_site",  "beta_3", "p_site_ind", "sigma", # "C", maybe C or a summary stat, might blow up if saving each activity center "s".
 
 start_zeros <- Sys.time()
 

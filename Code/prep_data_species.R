@@ -20,15 +20,16 @@ Species <- config$Species
 M <- switch(Species,
             CPIC = 7000,
             PRUB = 1000,
-            CSER = 500,
+            CSER = 750,
             SODO = 1000
 )
+M_min <- 500
 
 if(testing) {
   M <- 100
 }
 
-min_cap_rate <- 0.01
+min_cap_rate <- 0.03
 
 ##### Functions #####
 
@@ -195,7 +196,8 @@ n_days <- 4
 
 # assume capture rate of min_cap_rate (~0.03) to get max individuals to augment (M[g])
 df_M <- n_ind_site %>%
-  mutate(M = if_else(n > 0, n / min_cap_rate + 10, 500))
+  mutate(M = if_else(n == 0, 500, n / min_cap_rate),
+         M = if_else(M < 500, 500, M))
 df_M
 
 # 

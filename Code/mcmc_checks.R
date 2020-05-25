@@ -12,8 +12,8 @@ library(dplyr)
 nowt <- function(x = NULL) x
 
 testing <- FALSE
-Species <- "SODO"
-run_date <- "2020-05-21"
+Species <- "PRUB"
+run_date <- "2020-05-23"
 
 if(testing) {
   load(file = paste0("Data/Derived/", Species, "_all_site_testing_", run_date, ".RData"))
@@ -127,7 +127,7 @@ p + facet_text(size = 15)
 p <- mcmc_trace(samples, regex_pars = c("sd"))
 p + facet_text(size = 15)
 
-p <- mcmc_trace(samples, regex_pars = c("density"))
+p <- mcmc_trace(samples, regex_pars = c("density_linear"))
 p + facet_text(size = 15)
 
 p <- mcmc_trace(samples, regex_pars = c("density_ha"))
@@ -138,6 +138,10 @@ p + facet_text(size = 15)
 
 p <- mcmc_hist(samples, regex_pars = c("N"))
 p + facet_text(size = 15)
+
+p <- mcmc_dens_chains(samples, regex_pars = c("N"))
+p + facet_text(size = 15)
+
 # p + vline_at(n_ind_site$n)
 # p + geom_vline(data = n_ind_site, aes(xintercept = n), color = "red") + facet_wrap(~site_num) # doesn't work
 # 
