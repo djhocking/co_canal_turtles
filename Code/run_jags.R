@@ -12,6 +12,11 @@ testing <- config$testing
 run_date <- config$run_date
 Species <- config$Species
 
+if(Sys.getenv("RSTUDIO") == "1" && !nzchar(Sys.getenv("RSTUDIO_TERM")) && 
+    Sys.info()["sysname"] == "Darwin" && getRversion() == "4.0.0") {
+  parallel:::setDefaultClusterOptions(setup_strategy = "sequential")
+}
+
 set.seed(239871)
 
 if(testing) {
