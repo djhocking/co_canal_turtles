@@ -12,7 +12,7 @@ library(dplyr)
 nowt <- function(x = NULL) x
 
 testing <- FALSE
-Species <- "PRUB"
+Species <- "SODO"
 run_date <- "2020-05-23"
 
 if(testing) {
@@ -44,6 +44,7 @@ summary_N <- samples_N %>%
                 check = minimum >= n) %>%
   nowt()
 summary_N
+
 #----- Get proportion of total individuals captured over all sample periods and traps -----
 samples_prop_cap <- samples_N
 samples_prop_cap[ , ] <- NA_real_
@@ -90,6 +91,29 @@ p + facet_text(size = 15)
 
 p <- mcmc_dens_chains(samples, regex_pars = c("sigma"))
 p + facet_text(size = 15)
+
+mat <- as.matrix(samples)
+df <- data.frame(mat, stringsAsFactors = FALSE)
+names(df) <- dimnames(mat)[[2]]
+df <- df %>%
+  dplyr::select(sigma) %>%
+  # dplyr::mutate(hr50 = 2 * sigma * 0.68,
+         # hr95 = 2 * sigma * 2) %>%
+  nowt()
+
+# Prior vs. Posterior sigma - no movement with SODO
+ggplot() +
+  # aes(x = c(0, 10, colour = "Prior")) +
+  stat_function(fun = dgamma, n = 101, args = list(5, rate = 1.25), aes(x = c(0, 10), colour = "Prior")) +
+  geom_freqpoly(data = df, aes(sigma, after_stat(density), colour = "Posterior"), bins = 50) + 
+  labs(colour = "Legend", x = expression(sigma), y = "Frequency") +
+  theme_bw() +
+  theme(legend.position = "right") +
+  scale_colour_manual(name = "Legend", values = c("Prior" = "black", "Posterior" = "red")) +
+  nowt()
+
+# p <- mcmc_dens(samples, regex_pars = c("home_50")) + panel_cols(color = "gray20", fill = "gray30")
+# p + facet_text(size = 15)
 
 # 50% kernal density home range (+/- 0.68 SD)
 
@@ -152,8 +176,8 @@ p + facet_text(size = 15)
 # p <- mcmc_trace(samples, regex_pars = c("mu_psi_site"))
 # p + facet_text(size = 15)
 
-p <- mcmc_trace(samples, regex_pars = c("p_cap_site"))
-p + facet_text(size = 15)
+# p <- mcmc_trace(samples, regex_pars = c("p_cap_site"))
+# p + facet_text(size = 15)
 
 p <- mcmc_trace(samples, regex_pars = c("p_cap_day"))
 p + facet_text(size = 15)
@@ -187,10 +211,10 @@ min(mon$Bulk_ESS)
 min(mon$Tail_ESS)
 
 # for nimble
-sample_array <- base::array(as.numeric(unlist(samples)), dim=c(nrow(samples[[1]]), length(samples), ncol(samples[[1]])), dimnames = list(NULL, NULL, colnames(samples[[1]])))
-mon <- rstan::monitor(sample_array, warmup = 0)
-rstan:::print.simsummary(mon)
-max(mon$Rhat)
-min(mon$Bulk_ESS)
-min(mon$Tail_ESS)
+# sample_array <- base::array(as.numeric(unlist(samples)), dim=c(nrow(samples[[1]]), length(samples), ncol(samples[[1]])), dimnames = list(NULL, NULL, colnames(samples[[1]])))
+# mon <- rstan::monitor(sample_array, warmup = 0)
+# rstan:::print.simsummary(mon)
+# max(mon$Rhat)
+# min(mon$Bulk_ESS)
+# min(mon$Tail_ESS)
 
