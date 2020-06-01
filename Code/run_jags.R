@@ -15,15 +15,22 @@ Species <- config$Species
 set.seed(239871)
 
 if(testing) {
-  ni = 300
+  ni = 700
   nt = 1
   nc = 2
   nb = 200
 } else {
+  if(Species == CPIC) {
+    nb = 3000
+    ni = 15000
+    nc = 8
+    nt = 3
+  } else {
   nb = 5000
   ni = 55000
   nc = 8
   nt = 10
+  }
 }
 
 ######### Load Data from Previous script #########
@@ -54,7 +61,8 @@ model{
   # alpha_1_int ~ dnorm(0, pow(3, -2))
   psi_sex ~ dunif(0, 1)
   
-  sigma ~ dnorm(3, pow(2, -2))T(0, ) # half normal with mean = 1 -> roughly 1 ha home range. Same for both sexes b/c lack of data to fit separately
+  # sigma ~ dnorm(3, pow(2, -2))T(0, ) # half normal with mean = 1 -> roughly 1 ha home range. Same for both sexes b/c lack of data to fit separately
+  sigma ~ dgamma(5, 1.25) # prior for SODO
   alpha1 <- 1 / (2 * sigma * sigma)
   
   # for(t in 1:2) {
