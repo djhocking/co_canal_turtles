@@ -20,7 +20,7 @@ if(testing) {
   nc = 2
   nb = 200
 } else {
-  if(Species == CPIC) {
+  if(Species == "CPIC") {
     nb = 3000
     ni = 15000
     nc = 8
@@ -61,8 +61,8 @@ model{
   # alpha_1_int ~ dnorm(0, pow(3, -2))
   psi_sex ~ dunif(0, 1)
   
-  # sigma ~ dnorm(3, pow(2, -2))T(0, ) # half normal with mean = 1 -> roughly 1 ha home range. Same for both sexes b/c lack of data to fit separately
-  sigma ~ dgamma(5, 1.25) # prior for SODO
+  sigma ~ dnorm(3, pow(2, -2))T(0, ) # half normal with mean = 1 -> roughly 1 ha home range. Same for both sexes b/c lack of data to fit separately
+  # sigma ~ dgamma(5, 1.25) # prior for SODO
   alpha1 <- 1 / (2 * sigma * sigma)
   
   # for(t in 1:2) {
