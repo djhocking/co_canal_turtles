@@ -151,6 +151,9 @@ p + facet_text(size = 15)
 p <- mcmc_trace(samples, regex_pars = c("sd"))
 p + facet_text(size = 15)
 
+p <- mcmc_dens_chains(samples, regex_pars = c("sd"))
+p + facet_text(size = 15)
+
 p <- mcmc_trace(samples, regex_pars = c("density_linear"))
 p + facet_text(size = 15)
 
