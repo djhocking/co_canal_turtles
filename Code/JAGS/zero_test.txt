@@ -13,6 +13,7 @@ model{
   psi_sex ~ dunif(0, 1)
   
   sigma ~ dnorm(3, pow(2, -2))T(0, ) # half normal with mean = 1 -> roughly 1 ha home range. Same for both sexes b/c lack of data to fit separately
+  # sigma ~ dgamma(5, 1.25) # prior for SODO
   alpha1 <- 1 / (2 * sigma * sigma)
   
   # for(t in 1:2) {
@@ -63,21 +64,18 @@ model{
     
     ##### Derived parameters #####
     N[g] <- sum(z[g , 1:M[g]])
-    density[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
+    density_linear[g] <- sum(z[g , 1:M[g]]) / (xlim[g, 2] - xlim[g, 1]) # divided distances by 100 so calculates turtles per 100 m of canal
     
     density_ha[g] <- sum(z[g , 1:M[g]]) / ((xlim[g, 2] - xlim[g, 1]) * 100 * width_m[g]) * 10000 # density per hectare
     
+    # Problems for sites with no caps and iterations estimating N = 0
     # p_cap_site[g] <- n0[g] / (n0[g] + sum(z[g , (n0[g]+1):M[g]]))
-    for(i in 1:M[g]) {
-      p_cap_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K] * z[g, i])
-    }
-    p_cap_site[g] <- mean(p_cap_site_ind[g, 1:M[g]])
-    
-    for(i in 1:M[g]) {
-p_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
-    } # i
+    # for(i in 1:n0[g]) {
+    #   p_cap_site_ind[g, i] <- 1 - prod(1 - p[g, i, 1:max_trap[g], 1:K])
+    # }
+    # p_cap_site[g] <- mean(p_cap_site_ind[g, 1:n0[g]])
 
-    # site_zeros[g] ~ dnorm(density[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
+    # site_zeros[g] ~ dnorm(density_linear[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g] + beta_3 * width[g]), pow(3, -2))
     site_zeros[g] ~ dnorm(density_ha[g] - (beta_0 + beta_1 * forest[g] + beta_2 * depth[g]), pow(3, -2))
     
   } # g
