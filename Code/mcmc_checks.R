@@ -11,11 +11,7 @@ library(dplyr)
 
 nowt <- function(x = NULL) x
 
-<<<<<<< HEAD
-testing <-TRUE
-=======
 testing <- FALSE
->>>>>>> 5f54598d015234811995276ce82124e804a22840
 Species <- "SODO"
 run_date <- "2020-05-23"
 
