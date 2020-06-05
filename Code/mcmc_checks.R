@@ -11,8 +11,8 @@ library(dplyr)
 
 nowt <- function(x = NULL) x
 
-testing <- FALSE
-Species <- "PRUB"
+testing <-TRUE
+Species <- "SODO"
 run_date <- "2020-05-23"
 
 if(testing) {
